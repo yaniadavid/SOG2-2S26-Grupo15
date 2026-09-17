@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sog2-ventas-online"
+version = "0.1.0"
+description = "Limpieza de ventas online y servidor MCP para PostgreSQL"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cloud-sql-python-connector[pg8000]>=1.18,<2",
+    "mcp>=1.24,<2",
+    "SQLAlchemy>=2.0,<3",
+]
+
+[project.scripts]
+sog2-limpiar = "sog2.cleaning:main"
+sog2-mcp = "sog2.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

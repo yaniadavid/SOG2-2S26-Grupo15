@@ -1,0 +1,55 @@
+{
+  "archivo_origen": "ventas_online_2025.csv",
+  "sha256_origen": "a83e8c253c018d27f68d972436687c86fd64e04dd8d61db2dd409e0ff765a703",
+  "version_reglas": "1.0",
+  "filas_leidas": 1008,
+  "filas_salida": 1003,
+  "duplicados_exactos_eliminados": 5,
+  "filas_duplicadas_eliminadas": [
+    1002,
+    1003,
+    1004,
+    1005,
+    1006
+  ],
+  "ids_repetidos_con_datos_distintos": {
+    "198": [
+      99,
+      1009
+    ],
+    "402": [
+      303,
+      1008
+    ],
+    "559": [
+      460,
+      1007
+    ]
+  },
+  "cantidad_ids_repetidos_con_datos_distintos": 3,
+  "incidencias_en_filas_conservadas": {
+    "boletin_faltante": 15,
+    "boletin_invalido": 58,
+    "boletin_texto_normalizado": 15,
+    "compras_cero_con_venta": 88,
+    "edad_faltante": 8,
+    "edad_fuera_rango": 28,
+    "edad_menor_18": 11,
+    "genero_faltante": 14,
+    "genero_invalido": 61,
+    "genero_texto_normalizado": 17,
+    "metodo_pago_faltante": 11,
+    "metodo_pago_invalido": 89,
+    "monto_compra_formato_normalizado": 237,
+    "monto_compra_negativo": 57,
+    "monto_mayor_venta_total": 431,
+    "navegador_faltante": 19,
+    "navegador_invalido": 64,
+    "tiempo_formato_normalizado": 92,
+    "vale_faltante": 18,
+    "vale_invalido": 56,
+    "vale_texto_normalizado": 25,
+    "venta_total_formato_normalizado": 225,
+    "venta_total_negativa": 63
+  }
+}
