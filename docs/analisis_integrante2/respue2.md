@@ -1,4 +1,4 @@
-# Documento de Reporte - Integrante 2
+# Documento Consolidado - Integrante 2
 ## Sistemas Organizacionales y Gerenciales 2
 ### Análisis de Ventas Online 2025 - Grupo 15
 
@@ -7,6 +7,8 @@
 ## 1. Introducción
 
 Este documento contiene el análisis detallado de las preguntas estratégicas 8.a y 8.b de la práctica, junto con conclusiones profesionales y recomendaciones basadas en el análisis de 1,003 transacciones de ventas online del año 2025. El análisis se fundamenta en métodos estadísticos rigurosos, calidad de datos validada y decisiones estratégicas documentadas.
+
+La documentación técnica incluye especificaciones completas del módulo de análisis estadístico (`analysis_engine.py`) y visualizaciones de datos (`visualizations.py`).
 
 ---
 
@@ -90,29 +92,240 @@ Identifica el navegador o canal de mayor proporción de ingresos (por ejemplo, s
 
 ---
 
-## 6. Metodología Estadística y Selección de Visualizaciones
+## 6. Documentación Técnica
 
-### Enfoque Estadístico
+### 6.1 Módulo analysis_engine.py
 
-El análisis utiliza estadística descriptiva como cimiento: media, mediana, moda, mínimo y máximo para variables numéricas (edad, venta total, monto compra); frecuencia y proporción para variables categóricas (método de pago, navegador, género). La limitación deliberada a análisis descriptivo (sin inferencia) respeta que 1,003 transacciones en un año representan observaciones históricas, no muestra aleatoria de población infinita. Correlación de Pearson mide relación lineal entre edad y venta total; coeficiente permite determinar si cliente más viejo tiende a gastar más (correlación positiva), menos (negativa), o si relación es débil (cercana a cero). Tablas de contingencia (género versus método de pago) muestran si hombres y mujeres tienen preferencias diferenciadas en forma de pago; cálculo de razones de probabilidad permite cuantificar preferencia (por ejemplo, si probabilidad de uso de tarjeta crédito es 45% en mujeres pero 35% en hombres, razón es 1.29, indicando preferencia 29% mayor). Ningún análisis utiliza técnicas avanzadas (regresión multivariable, clustering, series de tiempo) porque objetivo es responder preguntas de negocio concretas, no construir modelos predictivos complejos.
+#### Descripción General
 
-### Selección de Visualizaciones
+El módulo `analysis_engine.py` proporciona funciones reutilizables y profesionales para análisis estadístico, segmentación, correlación y detección de tendencias en datos de ventas online.
 
-Se proponen mínimo siete gráficos según especificación práctica:
+**Características:**
+- Funciones puras sin efectos secundarios
+- Validación rigurosa de entrada
+- Manejo robusto de errores
+- Documentación completa con type hints
+- Código testeable y modular
 
-1. **Gráfico de línea: Venta Total por Mes** - Permite identificar patrones de estacionalidad, meses pico, meses débiles. Eje X es mes (Enero a Diciembre 2025), eje Y es venta acumulada mensual en dólares. Línea continua permite visualizar tendencia. Interpretación inmediata: si línea sube en Noviembre-Diciembre (típico retail), coincide expectativa; si es plana o baja, sugiere problema de captación.
+#### Tipos de Datos (Dataclasses)
 
-2. **Gráfico de Barras: Distribución por Método de Pago** - Eje X es categoría (Efectivo, Tarjeta Crédito, Tarjeta Débito, Sin Dato), eje Y es cantidad de transacciones. Altura de barra indica prevalencia. Título es "Preferencia de Método de Pago en Ventas Online 2025". Beneficio: responde pregunta operacional inmediata: qué proporción del flujo de caja es físico (efectivo) versus electrónico.
+**Estadisticas**
 
-3. **Gráfico de Barras: Rendimiento por Navegador** - Eje X es navegador (Tienda Física, Nav 1, Nav 2, Nav 3, Nav 4), eje Y es venta total en dólares. Barras están coloreadas por navegador para distinguibilidad. Permite comparación visual de canales. Si una barra es 2x altura de otra, mensaje es inmediato: ese navegador es crítico.
+Contiene estadísticas descriptivas de una variable numérica.
 
-4. **Gráfico de Barras: Uso de Boletín por Mes** - Eje X es mes, eje Y es cantidad de compras con boletín activado. Apilación opcional por género permite ver si patrón de uso de boletín es igual entre géneros o diferenciado. Responde: en qué meses clientes se suscriben más a boletín; se correlaciona con meses de campaña o pico de ventas.
+```python
+@dataclass
+class Estadisticas:
+    cantidad: int                   # Número de observaciones
+    media: float                    # Promedio aritmético
+    mediana: float                  # Valor central
+    desviacion_estandar: float      # Desviación estándar
+    minimo: float                   # Valor mínimo
+    maximo: float                   # Valor máximo
+    rango: float                    # Max - Min
+    percentil_25: float             # Cuartil inferior
+    percentil_75: float             # Cuartil superior
+    rango_intercuartil: float       # Q3 - Q1
+```
+
+**CorrelacionVars**
+
+Contiene información de correlación entre dos variables.
+
+```python
+@dataclass
+class CorrelacionVars:
+    variable1: str                  # Nombre de la primera variable
+    variable2: str                  # Nombre de la segunda variable
+    coeficiente: float              # Correlación de Pearson (-1 a 1)
+    tipo_relacion: str              # "fuerte positiva", "débil", etc.
+    cantidad_pares: int             # Número de pares válidos
+```
+
+**Tendencia**
+
+Contiene información sobre una tendencia temporal detectada.
+
+```python
+@dataclass
+class Tendencia:
+    variable: str                   # Nombre de la variable
+    periodo: str                    # "mes", "trimestre", "anio"
+    puntos_datos: int               # Número de puntos en serie temporal
+    promedio_inicial: float         # Promedio del primer período
+    promedio_final: float           # Promedio del último período
+    cambio_porcentaje: float        # Cambio % del inicial al final
+    direccion: str                  # "ascendente", "descendente", "estable"
+```
+
+#### Funciones Principales
+
+**calcular_estadisticas()**
+
+Calcula estadísticas descriptivas de un conjunto de números.
+
+```python
+def calcular_estadisticas(valores: Sequence[float]) -> Estadisticas:
+```
+
+Características:
+- Calcula media, mediana, desviación estándar
+- Detecta automáticamente valores NaN e infinito
+- Trabaja con listas, tuplas, Series de pandas y arrays de numpy
+
+**segmentar_datos()**
+
+Segmenta datos por valores de una columna y calcula estadísticas.
+
+**correlacionar_variables()**
+
+Calcula la correlación de Pearson entre dos variables numéricas.
+
+Clasificación de relaciones:
+- **Fuerte positiva/negativa:** |r| > 0.8
+- **Moderada positiva/negativa:** 0.5 < |r| ≤ 0.8
+- **Débil positiva/negativa:** 0.2 < |r| ≤ 0.5
+- **Muy débil o nula:** |r| ≤ 0.2
+
+**detectar_tendencias()**
+
+Detecta tendencias temporales en los datos.
+
+Características:
+- Detecta tendencias ascendentes, descendentes o estables
+- Clasifica períodos automáticamente (mes, trimestre, año)
+- Calcula cambio porcentual
+- Umbral de estabilidad: 5%
+
+#### Características de Diseño
+
+1. **Funciones Puras**: No modifica el DataFrame original, retorna copias.
+2. **Type Hints Completos**: Todas las funciones tienen anotaciones de tipos.
+3. **Documentación Detallada**: Docstrings completos con Args, Returns, Raises.
+4. **Validación Rigurosa**: Cada función valida sus inputs con mensajes descriptivos.
+
+#### Caso de Uso Completo
+
+```python
+import pandas as pd
+from sog2.analysis_engine import (
+    calcular_estadisticas,
+    segmentar_datos,
+    correlacionar_variables,
+)
+
+df = pd.read_csv('ventas_online_2025_limpio.csv')
+
+stats = calcular_estadisticas(df['venta_total'])
+print(f"Venta promedio: ${stats.media:.2f}")
+
+corr = correlacionar_variables(df, 'edad', 'venta_total')
+print(f"Correlación: {corr.coeficiente:.3f}")
+```
+
+#### Instalación de Dependencias
+
+```bash
+pip install pandas numpy
+```
+
+---
+
+### 6.2 Módulo visualizations.py
+
+#### Panorama General
+
+El módulo `visualizations.py` proporciona 8 tipos de gráficas diferentes diseñadas para análisis comprehensivo de datos de ventas online. Cada gráfica está optimizada para revelar diferentes aspectos de los datos mediante visualización académica profesional.
+
+#### Gráfica 1: Distribución de Edades de Clientes
+
+**Archivo**: `01_distribucion_edades.png/pdf`
+
+**Tipo**: Histograma con indicadores estadísticos
+
+**Función**: `grafica_distribucion_edades(df, titulo, color, bins, figsize)`
+
+**Descripción**
+
+Histograma que muestra la distribución de frecuencias de las edades de los clientes. Incluye líneas de referencia para media y mediana, permitiendo identificar patrones en la población.
+
+**Características Técnicas**
+
+- Bins: 20 (ajustable)
+- Colores: Azul primario con borde negro
+- Líneas de referencia: Media (púrpura) y Mediana (naranja)
+- Validación: Excluye edades <= 0 o > 100
+
+**Insights Típicos**
+
+- Identifica grupos de edad dominantes
+- Compara media y mediana para detectar asimetría
+- Ayuda a segmentar campañas por edad
+- Revela si hay distribución uniforme o concentrada
+
+**Parámetros Personalizables**
+
+```python
+grafica_distribucion_edades(
+    df=datos,
+    titulo="Distribución de Edades",
+    color="#2E86AB",  # Color personalizado
+    bins=25,          # Más bins = más granularidad
+    figsize=(12, 7)   # Tamaño de figura
+)
+```
+
+#### Especificaciones de Exportación
+
+**Formatos**
+
+PNG: 
+- Resolución: 300 DPI (profesional)
+- Fondo: Blanco
+- Compresión: Automática
+- Uso: Presentaciones, reportes
+
+PDF:
+- Formato: Vectorial escalable
+- Fondo: Blanco
+- Tamaño: Automático
+- Uso: Impresión, reportes formales
+- Nota: Se genera también un PDF combinado con todas las gráficas
+
+**Paleta de Colores Estándar**
+
+```
+Primario:     #2E86AB (Azul)
+Secundario:   #A23B72 (Púrpura)
+Terciario:    #F18F01 (Naranja)
+Cuaternario:  #C73E1D (Rojo)
+Quinto:       #6A994E (Verde)
+Sexto:        #BC4749 (Rojo Oscuro)
+```
+
+**Estilos Académicos Aplicados**
+
+- Fuente: sans-serif (sistema)
+- Tamaño base: 10pt
+- Títulos: 13pt, negrita, 20pt padding
+- Etiquetas ejes: 11pt, negrita
+- Grid: alfa 0.3, solo en necesario
+
+#### Gráficas Adicionales Documentadas
+
+1. **Gráfico de línea: Venta Total por Mes** - Permite identificar patrones de estacionalidad, meses pico, meses débiles. Eje X es mes (Enero a Diciembre 2025), eje Y es venta acumulada mensual en dólares. Línea continua permite visualizar tendencia.
+
+2. **Gráfico de Barras: Distribución por Método de Pago** - Eje X es categoría (Efectivo, Tarjeta Crédito, Tarjeta Débito, Sin Dato), eje Y es cantidad de transacciones. Altura de barra indica prevalencia.
+
+3. **Gráfico de Barras: Rendimiento por Navegador** - Eje X es navegador (Tienda Física, Nav 1, Nav 2, Nav 3, Nav 4), eje Y es venta total en dólares. Barras están coloreadas por navegador para distinguibilidad.
+
+4. **Gráfico de Barras: Uso de Boletín por Mes** - Eje X es mes, eje Y es cantidad de compras con boletín activado. Apilación opcional por género permite ver si patrón es diferenciado.
 
 5. **Gráfico de Barras: Uso de Vale por Mes** - Similar a boletín. Permite evaluar impacto de programa de vale a lo largo del año.
 
-6. **Gráfico de Dispersión: Edad versus Venta Total** - Cada punto es una transacción; posición horizontal es edad cliente, vertical es venta total. Nubes de puntos concentradas en parte superior derecha (edad alta, venta alta) indican correlación positiva. Si nube es dispersa sin patrón, correlación es débil. Permite identificar visualmente si clientes mayores gastan más.
+6. **Gráfico de Dispersión: Edad versus Venta Total** - Cada punto es una transacción; posición horizontal es edad cliente, vertical es venta total. Permite identificar visualmente si clientes mayores gastan más.
 
-7. **Gráfico de Barras Agrupadas: Venta Promedio por Género y Navegador** - Eje X es género, eje Y es venta promedio; barras agrupadas por navegador. Permite ver si patrón de gasto por género es consistente across canales (ambos géneros gastan igual en Navegador 1 pero diferente en Tienda Física) o diferenciado.
+7. **Gráfico de Barras Agrupadas: Venta Promedio por Género y Navegador** - Eje X es género, eje Y es venta promedio; barras agrupadas por navegador. Permite ver patrones diferenciados por canal.
 
 **Criterios de Diseño Aplicados Universalmente:**
 - Títulos en español claro, sin ambigüedad.
@@ -154,8 +367,8 @@ El análisis de ventas online 2025 proporciona fundamento sólido para decisione
 
 ---
 
-**Documento preparado por:** Integrante 2 (Análisis y Reporte)  
-**Fecha:** 17 de septiembre de 2026  
+**Documento consolidado por:** Integrante 2 (Análisis, Reporte y Documentación Técnica)  
+**Fecha:** 18 de septiembre de 2026  
 **Basado en:** Dataset de ventas online 2025 (1,003 transacciones validadas)  
-**Fuentes de datos:** `data/processed/ventas_online_2025_limpio.csv`, documentación técnica de preparación y modelo relacional
-
+**Fuentes de datos:** `data/processed/ventas_online_2025_limpio.csv`, módulos `analysis_engine.py` y `visualizations.py`  
+**Nota:** Este documento consolida y reemplaza los archivos anteriores `reporte.md`, `DOCUMENTACION_GRAFICAS.md` y `DOCUMENTACION_ANALYSIS_ENGINE.md`

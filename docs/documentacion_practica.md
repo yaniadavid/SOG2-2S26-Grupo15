@@ -1207,3 +1207,176 @@ La preparación realizada demuestra que un análisis confiable comienza por cono
 5. `<RECOMENDACION_5>`
 
 6. `<RECOMENDACION_6>`
+
+---
+
+## Análisis y Documentación Técnica - Integrante 2 (Monjes)
+
+### Respuesta a Pregunta 8.a: Diferenciación frente a la Competencia
+
+El análisis de datos de ventas online 2025 revela patrones estratégicos que permiten diferenciación competitiva en múltiples dimensiones operacionales y comerciales.
+
+**Segmentación Precisa de Canales de Distribución**
+
+El análisis muestra una distribución heterogénea entre canales: la tienda física y los navegadores digitales presentan patrones de compra diferenciados en volumen, valor promedio de transacción y métodos de pago preferidos. Esta distinción permite optimizar la inversión en infraestructura y marketing según el rendimiento real de cada canal. Mientras la competencia puede operar con una visión genérica de "canal online", el análisis permite identificar qué navegador específico genera mayor valor, qué segmento de edad utiliza preferentemente cada plataforma y cuál es la tasa de conversión efectiva.
+
+**Comportamiento Diferenciado por Género y Edad**
+
+Los datos permiten segmentación detallada por género y grupo etario. El análisis revelará si las mujeres tienen mayor lealtad a promotiones específicas (boletín, vale) en comparación con hombres, o si ciertos rangos de edad muestran patrones de gasto consistentemente superiores. Esta inteligencia permite personalizar campañas de marketing y ajustar mensajes promocionales según receptividad demostrada.
+
+**Optimización de Políticas de Promoción**
+
+El análisis del impacto del boletín y el vale en el volumen y valor de venta permite responder si estas promociones realmente generan ingresos adicionales o simplemente canibalizan ventas que habrían ocurrido sin descuento. Si se identifica que los boletines aumentan compra en segmentos específicos pero no generan retorno en otros, la empresa puede dirigir promociones de forma quirúrgica.
+
+**Análisis de Preferencia en Métodos de Pago**
+
+La distribución de métodos de pago (efectivo, crédito, débito) permite estimar costos de operación diferenciados. Si el análisis demuestra que una sucursal física o navegador específico concentra pagos en efectivo, la empresa puede negociar soluciones de seguridad o implementar incentivos para migración a métodos digitales de menor costo.
+
+**Posicionamiento en Temporalidad y Demanda Estacional**
+
+El análisis de ventas mes a mes permite identificar meses de pico y meses débiles. La empresa puede prepararse con inventario y personal en picos, mientras reduce operación en valles.
+
+### Respuesta a Pregunta 8.b: Decisiones Estratégicas para Aumentar Ventas y Satisfacción del Cliente
+
+**Decisión 1: Inversión Diferenciada en Canales Según Rendimiento**
+
+Si el análisis demuestra que navegador específico genera 35% del volumen pero 45% de ingresos, la decisión es asignar recursos de marketing digital y mejora UX preferentemente a ese canal. Inversamente, si un canal tiene bajo rendimiento a pesar de alto tráfico, la decisión es reconfigurar interfaz o mejorar recomendaciones de producto. Esto aumenta ventas concentrando recursos en canales de mayor retorno.
+
+**Decisión 2: Campañas de Retención Segmentadas por Patrón de Compra**
+
+Identificar que clientes que utilizan boletín realizan 4.2 compras al año versus 2.1 en no suscriptores sugiere impulsar suscripción al boletín, pero solo en segmentos donde demostró efectividad. Crear ofertas personalizadas para clientes que no compran hace 60 días, segmentadas por método de pago preferido.
+
+**Decisión 3: Arquitectura de Promociones Basada en ROI por Segmento**
+
+Si el análisis demuestra que vale es utilizado principalmente por clientes de bajo valor promedio, la decisión es reducir profundidad de descuento o eliminarlo para este segmento. Implementar teste A/B para medir cuál estrategia genera mayor lifetime value.
+
+**Decisión 4: Optimización de Mix Operacional Tienda Física versus Online**
+
+Si tienda física muestra mayores compras por cliente pero menor valor total, la decisión es diseñar la tienda física como hub de impulso y experiencia mientras online es canal de eficiencia.
+
+**Decisión 5: Expansión a Segmentos Subutilizados con Alto Potencial**
+
+El análisis de edad permitirá identificar grupos demográficos con baja penetración actual pero alto potencial de gasto. Por ejemplo, si clientes de 60+ representan 8% del volumen pero 15% de ingresos, la decisión es crear línea de productos orientada a ese segmento.
+
+### Documentación Técnica - Módulo analysis_engine.py
+
+El módulo `analysis_engine.py` proporciona funciones reutilizables y profesionales para análisis estadístico, segmentación, correlación y detección de tendencias en datos de ventas online.
+
+**Tipos de Datos (Dataclasses)**
+
+```python
+@dataclass
+class Estadisticas:
+    cantidad: int
+    media: float
+    mediana: float
+    desviacion_estandar: float
+    minimo: float
+    maximo: float
+    rango: float
+    percentil_25: float
+    percentil_75: float
+    rango_intercuartil: float
+```
+
+```python
+@dataclass
+class CorrelacionVars:
+    variable1: str
+    variable2: str
+    coeficiente: float
+    tipo_relacion: str
+    cantidad_pares: int
+```
+
+```python
+@dataclass
+class Tendencia:
+    variable: str
+    periodo: str
+    puntos_datos: int
+    promedio_inicial: float
+    promedio_final: float
+    cambio_porcentaje: float
+    direccion: str
+```
+
+**Funciones Principales**
+
+- `calcular_estadisticas()`: Calcula estadísticas descriptivas de un conjunto de números.
+- `segmentar_datos()`: Segmenta datos por valores de una columna y calcula estadísticas.
+- `correlacionar_variables()`: Calcula la correlación de Pearson entre dos variables numéricas.
+- `detectar_tendencias()`: Detecta tendencias temporales en los datos.
+
+**Clasificación de Correlaciones**
+
+- Fuerte positiva/negativa: |r| > 0.8
+- Moderada positiva/negativa: 0.5 < |r| ≤ 0.8
+- Débil positiva/negativa: 0.2 < |r| ≤ 0.5
+- Muy débil o nula: |r| ≤ 0.2
+
+### Documentación Técnica - Módulo visualizations.py
+
+El módulo `visualizations.py` proporciona 8 tipos de gráficas diferentes diseñadas para análisis comprehensivo de datos de ventas online.
+
+**Especificaciones de Exportación**
+
+PNG:
+- Resolución: 300 DPI (profesional)
+- Fondo: Blanco
+- Compresión: Automática
+- Uso: Presentaciones, reportes
+
+PDF:
+- Formato: Vectorial escalable
+- Fondo: Blanco
+- Uso: Impresión, reportes formales
+
+**Paleta de Colores Estándar**
+
+```
+Primario:     #2E86AB (Azul)
+Secundario:   #A23B72 (Púrpura)
+Terciario:    #F18F01 (Naranja)
+Cuaternario:  #C73E1D (Rojo)
+Quinto:       #6A994E (Verde)
+Sexto:        #BC4749 (Rojo Oscuro)
+```
+
+**Siete Gráficas Mínimas**
+
+1. Línea de venta total por mes - Identifica patrones de estacionalidad
+2. Barras por método de pago - Distribución de formas de pago
+3. Barras por navegador - Rendimiento de canales
+4. Barras mensuales de boletín - Uso mensual del boletín
+5. Barras mensuales de vale - Uso mensual del vale
+6. Dispersión entre edad y venta total - Correlación visual
+7. Barras agrupadas de comparación por género - Patrones por género
+
+Una octava visualización opcional representa los grupos de edad. Todas las gráficas incluyen título, ejes, unidad monetaria cuando corresponde, leyenda y colores consistentes.
+
+### Conclusiones - Integrante 2
+
+**Conclusión 1: Preparación de Datos como Base de Decisiones Confiables**
+
+La implementación de un proceso riguroso de limpieza y validación de datos es el fundamento de cualquier decisión estratégica confiable. El conjunto de datos original contenía heterogeneidad en formatos monetarios, fechas con múltiples notaciones, valores faltantes no indicados explícitamente y categorías con variaciones textuales. La eliminación de únicamente cinco duplicados exactos permitió conservar 99.5% del volumen mientras se garantizaba integridad de datos. La documentación integrada de reglas de limpieza asegura reproducibilidad: si nuevos datos llegan, se pueden aplicar exactas mismas reglas, permitiendo series de tiempo comparables.
+
+**Conclusión 2: Ventaja Competitiva de Segmentación Granular**
+
+La práctica industrial estándar es tomar decisiones agregadas. El análisis realizado permite cambiar paradigma a decisión segmentada: invertir diferencialmente en canales según ROI, ofrecer promociones de profundidad variable por segmento, dimensionar inventario según predicción de demanda por mes y categoría. Esta granularidad tiene impacto financiero directo. Si presupuesto de marketing se asignaba uniformemente pero análisis demuestra que un canal genera 3x retorno de otro, reasignar presupuesto aumenta retorno sin gasto incremental. Competidor sin este análisis sigue regla de un tamaño único, incurriendo en eficiencia operacional menor.
+
+### Recomendaciones - Integrante 2
+
+**Recomendación 1: Implementar Cultura Continua de Validación de Datos**
+
+Establecer proceso mensual de validación donde analista verifica que nuevos datos cumplan exactamente las mismas 20 reglas aplicadas al dataset inicial. Crear alertas automáticas cuando proporción de valores nulos en campo específico supera histórico. Implementar dashboard que reporte para cada carga: cantidad de filas rechazadas por regla, distribución de problemas de calidad, desviación estadística versus baseline 2025.
+
+**Recomendación 2: Pilotar Toma de Decisión Segmentada en Canal de Mayor Impacto**
+
+Identifica el navegador o canal de mayor proporción de ingresos. Ejecutar teste controlado por 60 días: en ese canal, dirigir promociones solo a segmentos demográficos donde análisis demuestra respuesta. En canales control, mantener promoción genérica actual. Medir delta de ingresos, cambio en frecuencia de compra, cambio en valor promedio de transacción. Si teste genera delta positivo de 5%+ con gasto igual, escalar a todos los canales.
+
+---
+
+**Documentación consolidada de análisis, gráficas y motor estadístico preparada por:** Monjes (Integrante 2)  
+**Fecha:** 18 de septiembre de 2026  
+**Archivo completo disponible en:** `docs/analisis_integrante2/INTEGRANTE_2_CONSOLIDADO.md`
