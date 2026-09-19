@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 from typing import Optional
+
+os.environ.setdefault("MPLCONFIGDIR", str(Path.cwd() / ".matplotlib-cache"))
+
+import matplotlib
+
+matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -37,13 +44,13 @@ PALETA_COLORES = {
 }
 
 GENERO_ETIQUETAS = {0: "Masculino", 1: "Femenino"}
-METODO_PAGO_ETIQUETAS = {0: "Tarjeta Crédito", 1: "Transferencia", 2: "E-Wallet"}
+METODO_PAGO_ETIQUETAS = {0: "Efectivo", 1: "Tarjeta credito", 2: "Tarjeta debito"}
 NAVEGADOR_ETIQUETAS = {
-    0: "Chrome",
-    1: "Firefox",
-    2: "Safari",
-    3: "Edge",
-    4: "Opera",
+    0: "Tienda fisica",
+    1: "Navegador 1",
+    2: "Navegador 2",
+    3: "Navegador 3",
+    4: "Navegador 4",
 }
 
 
@@ -67,6 +74,144 @@ def _validar_datos(df: pd.DataFrame) -> pd.DataFrame:
         df = df[(df["tiempo"] >= 0) & (df["tiempo"].notna())]
 
     return df
+
+
+def _preparar_fecha_mes(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["fecha_compra"] = pd.to_datetime(df["fecha_compra"])
+    df["mes"] = df["fecha_compra"].dt.month
+    return df
+
+
+def grafica_venta_total_por_mes(
+    df: pd.DataFrame,
+    titulo: str = "Venta total por mes",
+    figsize: tuple = (12, 6),
+) -> plt.Figure:
+    """Genera grafica de linea con venta total acumulada por mes."""
+    df_valido = _preparar_fecha_mes(_validar_datos(df))
+    mensual = df_valido.groupby("mes")["venta_total"].sum().reindex(range(1, 13), fill_value=0)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(mensual.index, mensual.values, color=PALETA_COLORES["primario"], marker="o", linewidth=2.5)
+    ax.set_xlabel("Mes", fontweight="bold")
+    ax.set_ylabel("Venta total ($)", fontweight="bold")
+    ax.set_title(titulo, fontweight="bold", pad=20)
+    ax.set_xticks(range(1, 13))
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, p: f"${x:,.0f}"))
+    fig.tight_layout()
+    return fig
+
+
+def grafica_barras_metodo_pago(
+    df: pd.DataFrame,
+    titulo: str = "Distribucion de ventas por metodo de pago",
+    figsize: tuple = (10, 6),
+) -> plt.Figure:
+    """Genera barras de transacciones por metodo de pago."""
+    df_valido = _validar_datos(df)
+    conteos = df_valido["metodo_pago"].value_counts(dropna=False).sort_index()
+    etiquetas = [METODO_PAGO_ETIQUETAS.get(int(i), "Sin dato") if pd.notna(i) else "Sin dato" for i in conteos.index]
+
+    fig, ax = plt.subplots(figsize=figsize)
+    barras = ax.bar(etiquetas, conteos.values, color=PALETA_COLORES["primario"], alpha=0.85, edgecolor="black")
+    ax.set_ylabel("Transacciones", fontweight="bold")
+    ax.set_title(titulo, fontweight="bold", pad=20)
+    ax.grid(axis="y", alpha=0.3)
+    for barra in barras:
+        ax.text(barra.get_x() + barra.get_width() / 2, barra.get_height(), f"{int(barra.get_height())}", ha="center", va="bottom")
+    fig.tight_layout()
+    return fig
+
+
+def grafica_venta_por_navegador(
+    df: pd.DataFrame,
+    titulo: str = "Venta total por navegador",
+    figsize: tuple = (10, 6),
+) -> plt.Figure:
+    """Genera barras de venta total por navegador/canal."""
+    df_valido = _validar_datos(df)
+    ventas = df_valido.groupby("navegador")["venta_total"].sum().sort_index()
+    etiquetas = [NAVEGADOR_ETIQUETAS.get(int(i), "Sin dato") if pd.notna(i) else "Sin dato" for i in ventas.index]
+
+    fig, ax = plt.subplots(figsize=figsize)
+    barras = ax.bar(etiquetas, ventas.values, color=PALETA_COLORES["quinto"], alpha=0.85, edgecolor="black")
+    ax.set_ylabel("Venta total ($)", fontweight="bold")
+    ax.set_title(titulo, fontweight="bold", pad=20)
+    ax.tick_params(axis="x", rotation=20)
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, p: f"${x:,.0f}"))
+    for barra in barras:
+        ax.text(barra.get_x() + barra.get_width() / 2, barra.get_height(), f"${barra.get_height():,.0f}", ha="center", va="bottom", fontsize=8)
+    fig.tight_layout()
+    return fig
+
+
+def grafica_boletin_por_mes(
+    df: pd.DataFrame,
+    titulo: str = "Uso de boletin por mes",
+    figsize: tuple = (12, 6),
+) -> plt.Figure:
+    """Genera barras mensuales de compras con boletin."""
+    return _grafica_booleano_por_mes(df, "boletin", titulo, figsize, PALETA_COLORES["secundario"])
+
+
+def grafica_vale_por_mes(
+    df: pd.DataFrame,
+    titulo: str = "Uso de vale por mes",
+    figsize: tuple = (12, 6),
+) -> plt.Figure:
+    """Genera barras mensuales de compras con vale."""
+    return _grafica_booleano_por_mes(df, "vale", titulo, figsize, PALETA_COLORES["terciario"])
+
+
+def _grafica_booleano_por_mes(
+    df: pd.DataFrame,
+    columna: str,
+    titulo: str,
+    figsize: tuple,
+    color: str,
+) -> plt.Figure:
+    df_valido = _preparar_fecha_mes(_validar_datos(df))
+    conteos = df_valido[df_valido[columna] == 1].groupby("mes").size().reindex(range(1, 13), fill_value=0)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    barras = ax.bar(conteos.index, conteos.values, color=color, alpha=0.85, edgecolor="black")
+    ax.set_xlabel("Mes", fontweight="bold")
+    ax.set_ylabel("Transacciones", fontweight="bold")
+    ax.set_title(titulo, fontweight="bold", pad=20)
+    ax.set_xticks(range(1, 13))
+    for barra in barras:
+        ax.text(barra.get_x() + barra.get_width() / 2, barra.get_height(), f"{int(barra.get_height())}", ha="center", va="bottom", fontsize=8)
+    fig.tight_layout()
+    return fig
+
+
+def grafica_venta_promedio_genero_navegador(
+    df: pd.DataFrame,
+    titulo: str = "Venta promedio por genero y navegador",
+    figsize: tuple = (12, 6),
+) -> plt.Figure:
+    """Genera barras agrupadas de venta promedio por genero y navegador."""
+    df_valido = _validar_datos(df).copy()
+    df_valido["genero_label"] = df_valido["genero"].map(GENERO_ETIQUETAS)
+    df_valido["navegador_label"] = df_valido["navegador"].map(NAVEGADOR_ETIQUETAS)
+    tabla = df_valido.pivot_table(
+        index="genero_label",
+        columns="navegador_label",
+        values="venta_total",
+        aggfunc="mean",
+    )
+
+    fig, ax = plt.subplots(figsize=figsize)
+    tabla.plot(kind="bar", ax=ax, width=0.82)
+    ax.set_xlabel("Genero", fontweight="bold")
+    ax.set_ylabel("Venta promedio ($)", fontweight="bold")
+    ax.set_title(titulo, fontweight="bold", pad=20)
+    ax.tick_params(axis="x", rotation=0)
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, p: f"${x:,.0f}"))
+    ax.legend(title="Navegador", fontsize=8)
+    fig.tight_layout()
+    return fig
 
 
 def grafica_distribucion_edades(
@@ -471,7 +616,7 @@ def exportar_visualizaciones(
     Retorna:
         Diccionario con rutas de los archivos generados
     """
-    plt.style.update(ESTILO_ACADEMICO)
+    plt.rcParams.update(ESTILO_ACADEMICO)
 
     df = pd.read_csv(archivo_datos)
     directorio_salida.mkdir(parents=True, exist_ok=True)
@@ -479,14 +624,15 @@ def exportar_visualizaciones(
     archivos_generados = {}
 
     visualizaciones = [
-        ("01_distribucion_edades", grafica_distribucion_edades, {}),
-        ("02_distribucion_genero", grafica_distribucion_genero, {}),
-        ("03_tendencia_ventas", grafica_tendencia_ventas, {}),
-        ("04_scatter_edad_ventas", grafica_scatter_edad_ventas, {}),
-        ("05_matriz_correlacion", grafica_matriz_correlacion, {}),
-        ("06_boxplot_monto_genero", grafica_boxplot_monto_genero, {}),
-        ("07_pastel_metodo_pago", grafica_pastel_metodo_pago, {}),
-        ("08_barras_navegadores", grafica_barras_navegadores, {}),
+        ("01_venta_total_por_mes", grafica_venta_total_por_mes, {}),
+        ("02_barras_metodo_pago", grafica_barras_metodo_pago, {}),
+        ("03_venta_por_navegador", grafica_venta_por_navegador, {}),
+        ("04_boletin_por_mes", grafica_boletin_por_mes, {}),
+        ("05_vale_por_mes", grafica_vale_por_mes, {}),
+        ("06_scatter_edad_ventas", grafica_scatter_edad_ventas, {}),
+        ("07_genero_navegador", grafica_venta_promedio_genero_navegador, {}),
+        ("08_distribucion_edades", grafica_distribucion_edades, {}),
+        ("09_matriz_correlacion", grafica_matriz_correlacion, {}),
     ]
 
     for nombre, funcion, kwargs in visualizaciones:

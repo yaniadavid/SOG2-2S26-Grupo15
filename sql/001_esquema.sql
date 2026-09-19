@@ -12,12 +12,50 @@ $$;
 
 GRANT sog2_owner TO CURRENT_USER;
 GRANT CONNECT, CREATE ON DATABASE :"DBNAME" TO sog2_owner;
-SET ROLE sog2_owner;
 
 CREATE SCHEMA IF NOT EXISTS staging AUTHORIZATION sog2_owner;
 CREATE SCHEMA IF NOT EXISTS core AUTHORIZATION sog2_owner;
 CREATE SCHEMA IF NOT EXISTS analytics AUTHORIZATION sog2_owner;
 CREATE SCHEMA IF NOT EXISTS audit AUTHORIZATION sog2_owner;
+
+ALTER SCHEMA staging OWNER TO sog2_owner;
+ALTER SCHEMA core OWNER TO sog2_owner;
+ALTER SCHEMA analytics OWNER TO sog2_owner;
+ALTER SCHEMA audit OWNER TO sog2_owner;
+
+ALTER TABLE IF EXISTS staging.ventas_online_limpio OWNER TO sog2_owner;
+
+DO $$
+DECLARE
+    objeto RECORD;
+BEGIN
+    FOR objeto IN
+        SELECT schemaname, tablename
+        FROM pg_tables
+        WHERE schemaname IN ('staging', 'core', 'analytics', 'audit')
+    LOOP
+        EXECUTE format('ALTER TABLE %I.%I OWNER TO sog2_owner', objeto.schemaname, objeto.tablename);
+    END LOOP;
+
+    FOR objeto IN
+        SELECT schemaname, viewname
+        FROM pg_views
+        WHERE schemaname IN ('analytics')
+    LOOP
+        EXECUTE format('ALTER VIEW %I.%I OWNER TO sog2_owner', objeto.schemaname, objeto.viewname);
+    END LOOP;
+
+    FOR objeto IN
+        SELECT sequence_schema, sequence_name
+        FROM information_schema.sequences
+        WHERE sequence_schema IN ('core', 'audit')
+    LOOP
+        EXECUTE format('ALTER SEQUENCE %I.%I OWNER TO sog2_owner', objeto.sequence_schema, objeto.sequence_name);
+    END LOOP;
+END
+$$;
+
+SET ROLE sog2_owner;
 
 CREATE TABLE IF NOT EXISTS audit.cargas (
     carga_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

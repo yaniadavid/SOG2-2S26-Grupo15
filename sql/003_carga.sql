@@ -1,5 +1,8 @@
 \set ON_ERROR_STOP on
 
+GRANT sog2_loader TO CURRENT_USER;
+SET ROLE sog2_loader;
+
 TRUNCATE staging.ventas_online_limpio;
 
 \copy staging.ventas_online_limpio (fila_origen, id_cliente, edad, genero, venta_total, numero_compras, fecha_compra, monto_compra, metodo_pago, tiempo, navegador, boletin, vale, problemas_calidad, hash_fila) FROM 'data/processed/ventas_online_2025_limpio.csv' WITH (FORMAT csv, HEADER true, ENCODING 'UTF8')
@@ -150,3 +153,5 @@ FROM audit.cargas AS c
 WHERE c.sha256_origen = 'a83e8c253c018d27f68d972436687c86fd64e04dd8d61db2dd409e0ff765a703'
   AND c.version_reglas = '1.0';
 
+RESET ROLE;
+REVOKE sog2_loader FROM CURRENT_USER;
