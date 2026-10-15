@@ -1,11 +1,48 @@
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *.p12
 application_default_credentials.json
 service-account*.json
+*-credentials.json
 secrets/
+
+# Configuración real con contraseñas (se versiona solo odoo.conf.example)
+odoo.conf
+.pgpass
+pgpass.conf
+*.tfvars
+*.tfstate
+*.tfstate.*
+
+# Salidas de ejecución que pueden contener datos o credenciales
+*.log
+carga_resumen*.json
+
+# Respaldos y volcados de base de datos
+*.dump
+*.backup
+*.bak
+
+# Sesiones locales del agente
+.adk/
+.claude/
+
+# Scripts de trabajo local (uso de Claude Code, no se publican)
+scripts/local/
+scripts/carga_datos_odoo.py
+scripts/ejecutar_carga_odoo.*
+scripts/create_gcp_infrastructure.*
+scripts/verify_gcp_infrastructure.ps1
+scripts/nginx_setup.sh
+scripts/nginx_validate.sh
+scripts/nginx_odoo.conf
+scripts/nginx_odoo_ip.conf
+scripts/firewall_setup.sh
+scripts/certbot_renew.sh
+docs/odoo_installation/*.sh
 .venv/
 __pycache__/
 *.py[cod]
