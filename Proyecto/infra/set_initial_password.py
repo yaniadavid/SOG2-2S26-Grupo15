@@ -6,6 +6,7 @@ python set_initial_password.py LOGIN NOMBRE_DEL_SECRETO
 
 import base64
 import json
+import os
 import secrets
 import shutil
 import subprocess
@@ -21,7 +22,7 @@ ADMIN_SECRET = "quetzalmart-odoo-admin-password"
 
 
 def gcloud_output(*args: str) -> str:
-    gcloud = shutil.which("gcloud")
+    gcloud = shutil.which("gcloud.cmd" if os.name == "nt" else "gcloud")
     if not gcloud:
         raise RuntimeError("gcloud no está disponible")
     result = subprocess.run(
@@ -71,7 +72,7 @@ def main() -> None:
         raise RuntimeError("Se esperaba una sola cuenta de Odoo con ese login")
 
     # Evita sobrescribir una credencial que pudiera estar ya en uso.
-    gcloud = shutil.which("gcloud")
+    gcloud = shutil.which("gcloud.cmd" if os.name == "nt" else "gcloud")
     exists = subprocess.run(
         [gcloud, "secrets", "describe", target_secret, f"--project={PROJECT}"],
         capture_output=True, check=False,

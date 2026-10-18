@@ -33,12 +33,13 @@ Cada integrante documenta el funcionamiento de los módulos a su cargo para inte
 
 ## 2. Verificar y preparar la nube
 
-**Estado actual:** Odoo Community 18 y PostgreSQL 16 funcionan en GCP por HTTPS. Las cuentas de los integrantes 1 y 3 están activas; falta la del integrante 2. Cloud SQL tiene respaldos automáticos y el disco de Odoo tiene instantáneas diarias. Siguen pendientes el usuario SQL de solo lectura, la cuenta de integración de UiPath y una restauración de prueba. Véase [despliegue_odoo_gcp.md](despliegue_odoo_gcp.md).
+**Estado actual:** Odoo Community 18 y PostgreSQL 16 funcionan en GCP por HTTPS. Las cuentas individuales de los tres integrantes están activas. Cloud SQL tiene respaldos automáticos y el disco de Odoo tiene instantáneas diarias. Siguen pendientes el usuario SQL de solo lectura, la cuenta de integración de UiPath y una restauración de prueba. Véase [despliegue_odoo_gcp.md](despliegue_odoo_gcp.md).
 
 - [ ] **Integrante 1:** comprobar el estado actual de GCP, facturación, cuotas, permisos y presupuesto. El documento de arquitectura solo registra el estado observado el 14 de octubre.
 - [ ] Revisar el dimensionamiento, la red privada, la VM, la base de datos, los respaldos, los secretos y el acceso administrativo previstos en [la arquitectura](arquitectura_odoo_gcp.md).
 - [ ] Desplegar Odoo Community, PostgreSQL, HTTPS y acceso seguro de consulta SQL. Guardar configuración reproducible sin contraseñas en Git.
-- [ ] Crear cuentas individuales de Odoo para los tres integrantes y una cuenta de integración con permisos mínimos para el robot. Definir el acceso de solo lectura a PostgreSQL sin publicar su puerto.
+- [x] Crear cuentas individuales de Odoo para los tres integrantes y verificar sus contraseñas iniciales.
+- [ ] Crear una cuenta de integración con permisos mínimos para el robot. Definir el acceso de solo lectura a PostgreSQL sin publicar su puerto.
 - [ ] Probar inicio de sesión web, conexión de Odoo a la base, respaldo y restauración de prueba, y acceso SQL de solo lectura para la evaluación.
 
 **Salida:** ERP accesible en la nube y base consultable. Registrar URL, versión y fecha de la prueba, sin publicar credenciales.

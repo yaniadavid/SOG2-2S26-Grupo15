@@ -23,7 +23,7 @@ Cada directorio tiene una categoría con el mismo nombre. Los nombres de archivo
 | `yania.david@gmail.com` (Integrante 3) | Gestión de los tres directorios y los 15 archivos. Tiene rol de responsable del módulo. |
 | `javiermonjes007@gmail.com` (Integrante 1) | Lectura y descarga de las cinco facturas y los cinco contratos de outsourcing. No puede leer contratos de empleados ni editar archivos. |
 | `admin` | Administración de los tres directorios. |
-| Integrante 2 | Cuenta y permisos aún por definir. |
+| `dojuparupe1975@gmail.com` (Integrante 2) | Cuenta interna activa. No se le han asignado grupos de gestión documental; sus permisos funcionales se configurarán con CRM y tienda. |
 
 La separación se configura con grupos de acceso propios de DMS. Los tres directorios son raíces independientes: el de empleados solo incluye el grupo de gestión; los otros dos incluyen también el grupo de lectura comercial. No se crearon enlaces públicos para los contratos. Si se incorporan documentos reales, revisa el acceso antes de subirlos y evita compartir enlaces por token sin necesidad.
 
