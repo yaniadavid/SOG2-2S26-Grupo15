@@ -1,0 +1,77 @@
+[
+  {
+    "code": "QM-FP-2026-001",
+    "category": "Facturas de proveedores",
+    "file": "QM-FP-2026-001.pdf"
+  },
+  {
+    "code": "QM-FP-2026-002",
+    "category": "Facturas de proveedores",
+    "file": "QM-FP-2026-002.pdf"
+  },
+  {
+    "code": "QM-FP-2026-003",
+    "category": "Facturas de proveedores",
+    "file": "QM-FP-2026-003.pdf"
+  },
+  {
+    "code": "QM-FP-2026-004",
+    "category": "Facturas de proveedores",
+    "file": "QM-FP-2026-004.pdf"
+  },
+  {
+    "code": "QM-FP-2026-005",
+    "category": "Facturas de proveedores",
+    "file": "QM-FP-2026-005.pdf"
+  },
+  {
+    "code": "QM-CO-2026-001",
+    "category": "Contratos de outsourcing",
+    "file": "QM-CO-2026-001.pdf"
+  },
+  {
+    "code": "QM-CO-2026-002",
+    "category": "Contratos de outsourcing",
+    "file": "QM-CO-2026-002.pdf"
+  },
+  {
+    "code": "QM-CO-2026-003",
+    "category": "Contratos de outsourcing",
+    "file": "QM-CO-2026-003.pdf"
+  },
+  {
+    "code": "QM-CO-2026-004",
+    "category": "Contratos de outsourcing",
+    "file": "QM-CO-2026-004.pdf"
+  },
+  {
+    "code": "QM-CO-2026-005",
+    "category": "Contratos de outsourcing",
+    "file": "QM-CO-2026-005.pdf"
+  },
+  {
+    "code": "QM-CE-2026-001",
+    "category": "Contratos de empleados",
+    "file": "QM-CE-2026-001.pdf"
+  },
+  {
+    "code": "QM-CE-2026-002",
+    "category": "Contratos de empleados",
+    "file": "QM-CE-2026-002.pdf"
+  },
+  {
+    "code": "QM-CE-2026-003",
+    "category": "Contratos de empleados",
+    "file": "QM-CE-2026-003.pdf"
+  },
+  {
+    "code": "QM-CE-2026-004",
+    "category": "Contratos de empleados",
+    "file": "QM-CE-2026-004.pdf"
+  },
+  {
+    "code": "QM-CE-2026-005",
+    "category": "Contratos de empleados",
+    "file": "QM-CE-2026-005.pdf"
+  }
+]
