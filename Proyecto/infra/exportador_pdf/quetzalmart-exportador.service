@@ -1,0 +1,18 @@
+[Unit]
+Description=Quetzalmart - exportador de facturas PDF desde Odoo
+After=odoo.service
+Wants=odoo.service
+
+[Service]
+Type=oneshot
+User=quetzalmart-export
+Group=quetzalmart-export
+EnvironmentFile=/etc/quetzalmart/exportador.env
+ExecStart=/usr/bin/python3 -I /opt/quetzalmart/exportador.py
+TimeoutStartSec=300
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/quetzalmart/facturas_pdf
+UMask=0027
