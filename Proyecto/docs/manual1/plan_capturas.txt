@@ -1,0 +1,313 @@
+PLAN DE CAPTURAS - MANUAL 1 (Integrante 1)
+Proyecto SOG2 Grupo 15 - QuetzalMart - Odoo 18 Community en Google Cloud
+Numeracion estable: 54 capturas (01 a 54). No renumerar; si una se descarta, se deja el numero vacio.
+
+REGLAS DE TODAS LAS CAPTURAS
+- Se toman solo desde el Odoo desplegado y con los datos ya cargados. Nunca mockups ni capturas simuladas.
+- Antes de la sesion: arrancar Cloud SQL y la VM (ops/arrancar_para_calificacion.txt) y correr bloque 01 y TOTALES de sql/demo_final.sql: todas las cifras "esperado" deben dar ok = true.
+- Nombre de archivo: cap_NN.png (NN con dos digitos, el numero de este plan). Es el nombre que busca el generador del manual. El tema se anota solo en este plan, no en el nombre.
+- Formato PNG, ancho minimo 1280 px, zoom del navegador 100 por ciento, interfaz en espanol.
+- Ocultar con recuadro opaco (no difuminado): IP publica o privada, correos personales, contrasenas, tokens, nombres de secretos con valor, numero de proyecto. Recortar la barra de direcciones si muestra la IP. Revisar tambien el historial de la terminal y el prompt.
+- Empresa: Guatemala, moneda GTQ, plan contable gt, IVA 12 por ciento incluido. Las cifras visibles deben ser las reales; ninguna se corrige a mano.
+- Certificado: el acceso HTTPS usa un certificado publico de Let's Encrypt emitido para la IP; no hay advertencia del navegador y no se documenta ninguna.
+- Consultas SQL: se ejecutan con el paquete verificado sql/demostracion (ejecutar_consultas.sh, 01 a 06, demo_final.sql) usando el rol de solo lectura sog2_lectura.
+- Convenciones: [OBJ-E] = cifra del enunciado; [PORC-1] = porcion del Integrante 1 (prefijo I1-).
+- Responsable: I1 = Integrante 1; I2 / I3 = a cargo de los Integrantes 2 y 3 (ver cada captura).
+- Ensayo antes de la toma: no dejar documentos de prueba. Si se uso datos/ensayo_extremo_a_extremo.py, correr --limpiar y verificar los conteos antes de capturar listas.
+
+Referencia de requisitos del enunciado (columna "Responde a"):
+R1 Odoo Community en la nube | R2 base relacional en la nube | R3 ventas 150 | R4 cotizaciones 20 | R5 empleados 35 | R6 cargos 6 | R7 departamentos 5 | R8 compras con factura 100 | R9 materiales 60 | R10 facturas 50 | R11 PDF de facturas en carpeta | R12 Manual 1 secc. 1 | R13 Manual 1 secc. 3 | R14 consultas SQL preparadas | R15 gestion documental (otro integrante; el Integrante 1 aporta 5 respaldos)
+
+======================================================================
+BLOQUE A - SECCION 1: INSTALACION Y ARQUITECTURA (01 a 14) - Responsable I1
+======================================================================
+
+01. cap_01.png  Panel del proyecto en la consola de Google Cloud (selector de proyecto > Panel).
+    Debe verse: nombre/ID del proyecto, facturacion vinculada.
+    Oculta/recorta: numero de proyecto, correo de la cuenta.
+    Responde a: R1, R12.
+
+02. cap_02.png  APIs y servicios habilitados.
+    Debe verse: Compute Engine, Cloud SQL Admin, Secret Manager, Service Networking, IAP, Cloud Billing.
+    Oculta/recorta: correo de la cuenta.
+    Responde a: R1, R2, R12.
+
+03. cap_03.png  Red VPC default: acceso privado a servicios y rango reservado.
+    Debe verse: rango reservado y peering activos.
+    Oculta/recorta: el rango CIDR reservado.
+    Responde a: R2, R12.
+
+04. cap_04.png  Reglas de firewall.
+    Debe verse: quetzalmart-allow-web y quetzalmart-allow-iap-ssh con la etiqueta quetzalmart-odoo; sin reglas abiertas a Internet para 22/3389.
+    Oculta/recorta: rangos de origen que correspondan a IPs reales de personas.
+    Responde a: R1, R12.
+
+05. cap_05.png  Detalle de la VM quetzalmart-odoo.
+    Debe verse: estado En ejecucion, tipo, zona, disco de 50 GB, etiqueta de red.
+    Oculta/recorta: IP externa e interna, cuenta de servicio con correo.
+    Responde a: R1, R12.
+
+06. cap_06.png  Instancia Cloud SQL, descripcion general.
+    Debe verse: PostgreSQL 16, edicion, tamano, almacenamiento, estado ejecutandose.
+    Oculta/recorta: IP privada y nombre de conexion.
+    Responde a: R2, R12.
+
+07. cap_07.png  Cloud SQL > Conexiones > Redes.
+    Debe verse: IP publica desactivada, IP privada activada.
+    Oculta/recorta: IP privada.
+    Responde a: R2, R12.
+
+08. cap_08.png  Cloud SQL: bases de datos y usuarios.
+    Debe verse: base quetzalmart_db, usuario odoo y el rol de solo lectura sog2_lectura (si aparece como usuario).
+    Oculta/recorta: nada mas; nunca abrir contrasenas.
+    Responde a: R2, R14, R12.
+
+09. cap_09.png  Lista de Secret Manager.
+    Debe verse: nombres de los secretos, sin abrir versiones.
+    Oculta/recorta: cualquier valor o version desplegada; correo del propietario.
+    Responde a: R12 (seguridad).
+
+10. cap_10.png  Terminal de la VM por IAP: sudo systemctl status odoo --no-pager
+    Debe verse: active (running), Odoo 18.
+    Oculta/recorta: prompt con nombre de host si incluye IP; correo del usuario SSH.
+    Responde a: R1, R12.
+
+11. cap_11.png  Terminal de la VM: dpkg -l | grep -i odoo ; sudo grep -E "^(workers|proxy_mode|http_interface)" /etc/odoo/odoo.conf
+    Debe verse: version 18.0, workers, proxy_mode = True, http_interface = 127.0.0.1.
+    Oculta/recorta: NO incluir db_host, db_password ni admin_passwd en el grep (verificar la salida antes de capturar).
+    Responde a: R1, R12.
+
+12. cap_12.png  Terminal de la VM: sudo ss -tlnp | grep -E ":(80|443|8069|8072)\b" ; sudo nginx -t
+    Debe verse: Nginx en 80 y 443, Odoo en 127.0.0.1:8069 y 8072, nginx -t correcto.
+    Oculta/recorta: direcciones IP no locales en la salida.
+    Responde a: R1, R12.
+
+13. cap_13.png  Login de Odoo por HTTPS con candado valido (Let's Encrypt).
+    Debe verse: formulario de acceso y el candado sin advertencia.
+    Oculta/recorta: IP en la barra de direcciones (recortar o recuadro); no escribir credenciales antes de capturar.
+    Responde a: R1, R12.
+
+14. cap_14.png  Aplicaciones instaladas (Aplicaciones > filtro Instaladas).
+    Debe verse: Ventas, Compras, Facturacion, Empleados y la localizacion de Guatemala (plan gt). Si otros integrantes instalaron CRM, sitio web o documentos, se ven tambien.
+    Oculta/recorta: nada.
+    Responde a: R1, R13, R12.
+
+======================================================================
+BLOQUE B - SECCION 3: CARGA MASIVA (15 a 24) - Responsable I1
+======================================================================
+
+15. cap_15.png  Terminal ejecutando datos/cargador_xmlrpc.py (variables de entorno ODOO_URL, ODOO_DB, ODOO_USER, ODOO_PASSWORD).
+    Debe verse: el comando con parametros (--lote, --pausa) y las lineas de log por modelo. Si no se vuelve a cargar, usar la corrida --dry-run o una segunda corrida idempotente ("ya existian").
+    Oculta/recorta: ODOO_URL con la IP, el historial de comandos, cualquier export con la contrasena.
+    Responde a: R13.
+
+16. cap_16.png  Misma terminal, fin de la ejecucion.
+    Debe verse: "Resumen final (esperado = obtenido)" por concepto y "OK: conteos y totales coinciden".
+    Oculta/recorta: igual que 15.
+    Responde a: R13, R3 a R10.
+
+17. cap_17.png  Editor con las funciones de datos/cargador_xmlrpc.py (cargar_ventas, cargar_compras, cargar_facturas_cliente, facturar_con_asistente) y datos/conexion_odoo.py.
+    Debe verse: nombres de modelo y llamadas execute_kw; funciones puras separadas de los efectos.
+    Oculta/recorta: ninguna credencial existe en el codigo; confirmar que no hay URL con IP.
+    Responde a: R13.
+
+18. cap_18.png  Fuente de la carga: datos/generador_datos.py (conjuntos de datos con prefijo I1-) abierto.
+    Debe verse: estructura de los datos y unas filas reales.
+    Oculta/recorta: nada sensible esperado (NIT ficticios); revisar correos y telefonos.
+    Responde a: R13.
+
+19. cap_19.png  psql con rol sog2_lectura: ejecutar_consultas.sh, bloque 01 filas de ventas y TOTALES fila 1 a 3.
+    Debe verse: la consulta (nombre del archivo) y el resultado. [PORC-1] 50 (33 por facturar, 17 facturadas); [OBJ-E] 150.
+    Oculta/recorta: PGHOST y el encabezado "Base: ... en <host>" que imprime el script.
+    Responde a: R3, R14.
+
+20. cap_20.png  Bloque 01 fila 2 y TOTALES fila 4 (cotizaciones). [PORC-1] 7; [OBJ-E] 20.
+    Oculta/recorta: encabezado con host.
+    Responde a: R4, R14.
+
+21. cap_21.png  Bloque 01 filas 3 a 5 y 05_empleados.sql (empleados, cargos, departamentos). [PORC-1] 12/2/2; [OBJ-E] 35/6/5.
+    Oculta/recorta: encabezado con host.
+    Responde a: R5, R6, R7, R14.
+
+22. cap_22.png  Bloque 01 fila 6 y 03_compras.sql (compras con factura de proveedor). [PORC-1] 33; [OBJ-E] 100.
+    Oculta/recorta: encabezado con host.
+    Responde a: R8, R14.
+
+23. cap_23.png  Bloque 01 filas 7 y 8 (materiales y facturas de cliente) y TOTALES filas 9 y 11. [PORC-1] 20 y 17; [OBJ-E] 60 y 50.
+    Oculta/recorta: encabezado con host.
+    Responde a: R9, R10, R14.
+
+24. cap_24.png  TOTALES fila 12 (respaldos) y 06_integridad.sql con 0 filas. [PORC-1] respaldos 5; [OBJ-E] 15 en total con gestion documental.
+    Oculta/recorta: encabezado con host.
+    Responsable: I1 (la captura de gestion documental de los otros 10 documentos corresponde a I2 / I3, a confirmar).
+    Responde a: R15, R14.
+
+======================================================================
+BLOQUE C - SECCION 3: FLUJOS EN ODOO (25 a 44)
+======================================================================
+
+25. cap_25.png  Lista de clientes (Ventas > Pedidos > Clientes).
+    Debe verse: clientes I1- cargados y contador total.
+    Oculta/recorta: correos y telefonos si se ven reales; deben ser los ficticios de la carga.
+    Responsable: I1.  Responde a: R13.
+
+26. cap_26.png  Ficha de un cliente.
+    Debe verse: nombre, NIT, boton inteligente de ventas/facturas.
+    Oculta/recorta: correo y telefono.
+    Responsable: I1.  Responde a: R13.
+
+27. cap_27.png  [CONDICIONAL] Pipeline del CRM (CRM > Ventas > Mi pipeline).
+    Debe verse: oportunidades en etapas, ligadas a clientes.
+    Oculta/recorta: correos de contactos.
+    Responsable: I2 / I3 (quien instalo CRM en la misma base; confirmar quien). El Integrante 1 no instalo CRM: si nadie la aporta, se omite el numero.
+    Responde a: R13.
+
+28. cap_28.png  Lista de cotizaciones (Ventas > Pedidos > Cotizaciones).
+    Debe verse: estado Cotizacion / Cotizacion enviada y contador. [PORC-1] 7 (final 20).
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R4.
+
+29. cap_29.png  Cotizacion antes de confirmar.
+    Debe verse: cliente, lineas, IVA incluido, total en GTQ, botones Enviar por correo / Confirmar.
+    Oculta/recorta: correo del cliente.
+    Responsable: I1.  Responde a: R4, R13.
+    Nota: usar una cotizacion I1-Q- sin confirmarla; no alterar la cifra 7.
+
+30. cap_30.png  Pedido de venta confirmado (estado Pedido de venta, boton Crear factura).
+    Debe verse: numero S000xx, estado, boton Crear factura.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R3, R13.
+    Nota: NO confirmar una cotizacion real (cambiaria los conteos); abrir un pedido por facturar ya confirmado o usar el pedido del ensayo y cancelarlo despues.
+
+31. cap_31.png  Lista de pedidos de venta (Ventas > Pedidos > Pedidos).
+    Debe verse: contador total, columnas Estado y Total. [PORC-1] 50.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R3.
+
+32. cap_32.png  Pedido de venta confirmado abierto.
+    Debe verse: lineas, impuestos, total, boton inteligente Facturas con contador.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R3, R13.
+
+33. cap_33.png  Catalogo de productos y materiales (Ventas > Productos, vista lista, filtro por referencia I1-MAT-).
+    Debe verse: materiales con precio y contador. [PORC-1] 20; [OBJ-E] 60.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R9.
+
+34. cap_34.png  Solicitudes de presupuesto de compra (Compras > Pedidos).
+    Debe verse: RFQ en borrador/enviadas. Si el Integrante 1 no tiene RFQ (todas sus compras estan confirmadas), la captura la toma quien las tenga o se sustituye por la lista de ordenes con filtro.
+    Oculta/recorta: nada.
+    Responsable: I1 (condicionado a que existan RFQ; ver sql/criterios_conteo.txt, cifras aparte).
+    Responde a: R8, R13.
+
+35. cap_35.png  Orden de compra confirmada abierta.
+    Debe verse: proveedor, lineas, estado Orden de compra, boton inteligente de Factura.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R8, R13.
+
+36. cap_36.png  Lista de ordenes de compra.
+    Debe verse: contador total. [PORC-1] 33 con factura (final 100).
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R8.
+
+37. cap_37.png  Factura de proveedor ligada a una orden de compra.
+    Debe verse: proveedor, referencia I1-FP-, lineas, estado Publicado.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R8, R13.
+
+38. cap_38.png  Lista de facturas de proveedor.
+    Debe verse: contador y estados. [PORC-1] 33.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R8.
+
+39. cap_39.png  Asistente "Crear factura" desde un pedido de venta (opcion factura normal).
+    Debe verse: opcion de factura normal y boton Crear borrador de factura.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R10, R13.
+    Nota: se toma sobre un pedido por facturar sin completar el asistente, o durante el ensayo (datos/ensayo_extremo_a_extremo.py --limpiar despues).
+
+40. cap_40.png  Factura de cliente publicada.
+    Debe verse: numero INV/AAAA/NNNNN, cliente, lineas, IVA, total GTQ, estado Publicado, enlace al pedido.
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R10, R13.
+
+41. cap_41.png  Lista de facturas de cliente.
+    Debe verse: contador total. [PORC-1] 17 (final 50).
+    Oculta/recorta: nada.
+    Responsable: I1.  Responde a: R10.
+
+42. cap_42.png  Vista del PDF de una factura (Imprimir > Factura).
+    Debe verse: encabezado de la empresa Guatemala, lineas, IVA, total. Confirma que wkhtmltopdf funciona.
+    Oculta/recorta: NIT o datos de la empresa solo si son reales; correo del cliente.
+    Responsable: I1.  Responde a: R10, R11.
+
+43. cap_43.png  Terminal en la VM: ls -l /var/lib/quetzalmart/facturas_pdf | head ; ls -1 /var/lib/quetzalmart/facturas_pdf/*.pdf | wc -l
+    Debe verse: la ruta, archivos .pdf (INV_ y BILL_) y el conteo. [PORC-1] 50 (17 de cliente y 33 de proveedor), mas los generados en la calificacion; [OBJ-E] 50.
+    Oculta/recorta: prompt con host/IP, usuario SSH con correo.
+    Responsable: I1.  Responde a: R11.
+
+44. cap_44.png  Uno de los PDF de la carpeta abierto (misma factura que cap_40).
+    Debe verse: el mismo numero de factura, cliente y total que en cap_40.
+    Oculta/recorta: ruta local con nombre de usuario del equipo; correo del cliente.
+    Responsable: I1.  Responde a: R11.
+
+======================================================================
+BLOQUE D - EMPLEADOS (45 a 50) - Responsable I1
+======================================================================
+
+45. cap_45.png  Lista de empleados (Empleados > Empleados).
+    Debe verse: nombre, puesto, departamento, contador. [PORC-1] 12; [OBJ-E] 35.
+    Oculta/recorta: correos laborales y telefonos si se ven.
+    Responde a: R5, R13.
+
+46. cap_46.png  Ficha de un empleado.
+    Debe verse: puesto, departamento, gerente, contacto laboral.
+    Oculta/recorta: correo, telefono, fecha de nacimiento, identificacion.
+    Responde a: R5, R6, R7, R13.
+
+47. cap_47.png  Puestos de trabajo (Empleados > Configuracion > Puestos de trabajo).
+    Debe verse: Cajero de Sucursal y Analista de Compras, contador. [PORC-1] 2; [OBJ-E] 6.
+    Oculta/recorta: nada.
+    Responde a: R6.
+
+48. cap_48.png  Departamentos (Empleados > Departamentos).
+    Debe verse: Operaciones de Tienda y Administracion y Compras con su numero de empleados. [PORC-1] 2; [OBJ-E] 5.
+    Oculta/recorta: nada.
+    Responde a: R7.
+
+49. cap_49.png  Empleados agrupados por departamento y puesto.
+    Debe verse: cada grupo con su conteo.
+    Oculta/recorta: nada.
+    Responde a: R5, R6, R7.
+
+50. cap_50.png  Formulario de nuevo empleado (solo edicion).
+    Debe verse: campos de puesto y departamento.
+    Oculta/recorta: no guardar; descartar. Un registro guardado alteraria la cifra 12.
+    Responde a: R13.
+
+======================================================================
+BLOQUE E - SECCION 2 Y CIERRE (51 a 54) - Responsable I1
+======================================================================
+
+51. cap_51.png  Menu de Ventas desplegado (Pedidos, Para facturar, Productos, Informes, Configuracion).
+    Oculta/recorta: nombre de usuario con correo en la barra superior.
+    Responde a: seccion 2.
+
+52. cap_52.png  Menu de Compras desplegado.
+    Oculta/recorta: igual que 51.
+    Responde a: seccion 2.
+
+53. cap_53.png  Menu de Facturacion desplegado.
+    Oculta/recorta: igual que 51.
+    Responde a: seccion 2.
+
+54. cap_54.png  Menu de Empleados desplegado.
+    Oculta/recorta: igual que 51.
+    Responde a: seccion 2.
+
+TOTAL PLANIFICADO: 54 capturas. Responsabilidad: I1 todas, salvo la 27 (I2 / I3, condicional a CRM) y la parte de gestion documental de la 24 (I2 / I3).
+
+ORDEN SUGERIDO DE TOMA (una sola sesion con VM y Cloud SQL encendidas)
+1) 01 a 09 (consola GCP) 2) 10 a 12 (terminal VM) 3) 13, 14 4) 15 a 18 5) 19 a 24 (SQL, con datos definitivos) 6) 25 a 44 (interfaz y carpeta de PDF) 7) 45 a 50 8) 51 a 54.
+Capturas que dependen de cifras finales y se retoman si los conteos cambian: 19 a 24, 28, 31, 36, 38, 41, 43, 45, 47, 48.
+Antes de entregar: revisar cada PNG a tamano completo buscando IP, correos y contrasenas.

@@ -1,0 +1,116 @@
+LISTA DE VERIFICACION PARA EL DIA DE LA CALIFICACION
+Proyecto SOG2 Grupo 15 - QuetzalMart - Integrante 1
+Uso: marcar cada linea con [x] solo tras ejecutarla. Hacer el recorrido completo el dia anterior (ensayo, registrar en ensayo_resultado.txt) y repetir la seccion A media hora antes.
+Las consultas SQL ya NO se escriben a mano: se usan los archivos verificados de sql/demostracion/ (01_conteos_requisitos.sql a 06_integridad.sql, lanzados con ejecutar_consultas.sh, y su consolidacion demo_final.sql). Criterio de cada cifra: sql/criterios_conteo.txt.
+Ninguna credencial ni IP se escribe en este archivo ni se muestra en pantalla.
+
+Estado de referencia del Integrante 1 (prefijo I1-): 50 ventas confirmadas (33 por facturar, 17 facturadas), 7 cotizaciones de venta, 12 empleados, 2 cargos, 2 departamentos, 33 compras, 20 materiales, 33 facturas de proveedor publicadas, 17 facturas de cliente publicadas, 5 respaldos.
+Empresa: Guatemala, moneda GTQ, plan contable gt, IVA 12 por ciento incluido.
+Acceso HTTPS: certificado publico de Let's Encrypt emitido para la IP; el navegador NO debe mostrar advertencia.
+
+======================================================================
+A. ANTES DE EMPEZAR (T menos 60 min) - detalle de comandos en ops/arrancar_para_calificacion.txt
+======================================================================
+[ ] A1 Respaldo de reversa y arranque en orden (Cloud SQL, luego VM). Comandos GCP: requieren aprobacion del usuario.
+[ ] A2 Cloud SQL en RUNNABLE y VM en RUNNING.
+[ ] A3 Acceso a la VM por IAP (gcloud compute ssh ... --tunnel-through-iap).
+[ ] A4 Odoo y Nginx: sudo systemctl is-active odoo (active) ; sudo nginx -t (syntax is ok).
+[ ] A5 En la VM: bash verificar_entorno.sh y bash verificar_certificado.sh, ambos con "Fallas: 0".
+[ ] A6 La IP externa es la misma para la que se emitio el certificado (si es efimera y cambio, el certificado ya no coincide: reemitir antes, no durante la calificacion).
+[ ] A7 Temporizador del exportador activo: systemctl list-timers quetzalmart-exportador.timer (corre cada 60 s; usuario de servicio del exportador).
+[ ] A8 Navegador: abrir https://<IP>/web/login SIN advertencia de certificado; sesion iniciada y lista en una pestana. Idioma de la interfaz en espanol.
+[ ] A9 Terminal con las variables PGHOST, PGUSER (rol de solo lectura sog2_lectura), PGPASSWORD y PGDATABASE exportadas desde el gestor de secretos, sin escribirlas en pantalla.
+[ ] A10 Prueba rapida de la terminal SQL: psql -X -f rol_lectura_probar.sql (o ejecutar_consultas.sh) responde y la ultima fila de TOTALES muestra ok = true en todas.
+[ ] A11 Carpeta de PDF abierta en una segunda terminal: /var/lib/quetzalmart/facturas_pdf (ls -1 *.pdf | wc -l; esperado 50 mas los de ensayos previos que se hayan conservado). Anotar el conteo inicial.
+[ ] A12 Variables ODOO_URL, ODOO_DB, ODOO_USER, ODOO_PASSWORD listas SOLO si se va a usar el ensayo por script (datos/ensayo_extremo_a_extremo.py); en la calificacion la factura en vivo se crea desde la interfaz.
+[ ] A13 Manuales PDF abiertos en otra pestana; documento de arquitectura abierto.
+[ ] A14 Control de costo: facturacion y credito revisados.
+
+======================================================================
+B. CIFRAS DEL ENUNCIADO (consultas verificadas)
+======================================================================
+Comando unico (en la VM o donde llegue psql):  bash ejecutar_consultas.sh
+Consolidado para proyectar: psql -X -f demo_final.sql
+La cifra del enunciado es el total del equipo; el Integrante 1 aporta su porcion (columna porcion_i1). Anotar el valor real; no corregir cifras a mano.
+
+Requisito                          | Consulta                                   | Pantalla de Odoo
+Ventas (150; porcion 50)           | 01_conteos_requisitos.sql fila 1;           | Ventas > Pedidos > Pedidos
+                                   | demo_final.sql bloque TOTALES filas 1 a 3   |
+Cotizaciones (20; porcion 7)       | 01 fila 2; TOTALES fila 4                   | Ventas > Pedidos > Cotizaciones
+Empleados (35; porcion 12)         | 01 fila 3; 05_empleados.sql; TOTALES fila 5 | Empleados > Empleados
+Cargos (6; porcion 2)              | 01 fila 4; 05_empleados.sql                 | Empleados > Configuracion > Puestos
+Departamentos (5; porcion 2)       | 01 fila 5; 05_empleados.sql                 | Empleados > Departamentos
+Compras con factura (100; 33)      | 01 fila 6; 03_compras.sql                   | Compras > Pedidos > Ordenes de compra
+Materiales (60; porcion 20)        | 01 fila 7; TOTALES fila 9                   | Ventas > Productos (filtro materiales)
+Facturas (50; porcion 17)          | 01 fila 8; 04_facturas.sql                  | Facturacion > Clientes > Facturas
+Respaldos (porcion 5)              | TOTALES fila 12                             | Ajustes tecnicos > adjuntos o ficha de la orden de compra
+Integridad (0 hallazgos)           | 06_integridad.sql (0 filas)                 | no aplica
+PDF de facturas en carpeta         | ls -1 /var/lib/quetzalmart/facturas_pdf/*.pdf | explorador de archivos
+
+Nota: los conteos globales de 01 incluyen datos de otros integrantes; el Integrante 1 debe mostrar la columna porcion_i1 y el bloque TOTALES (valores "esperado" 50/33/17/7/12/2/2/33/20/33/17/5). Si ok = false, la base cambio: investigar antes de proyectar.
+
+======================================================================
+C. RECORRIDO CRONOMETRADO DEL DIA DE LA CALIFICACION
+======================================================================
+Tiempo total objetivo: 20 minutos, con 5 de margen. Cada bloque indica el tiempo objetivo acumulado.
+
+T+00:00 a 02:00  (2 min)  Contexto y nube
+  - Mostrar login por HTTPS sin advertencia (Let's Encrypt) y, en la consola de GCP, la VM y Cloud SQL en ejecucion.
+  - Comando en la VM: systemctl is-active odoo   (active)
+T+02:00 a 06:00  (4 min)  Datos en la interfaz
+  - Ventas > Pedidos (contador), Cotizaciones, Facturacion > Clientes > Facturas, Compras > Ordenes de compra, Empleados.
+  - Abrir una venta facturada y navegar a su factura y a su PDF.
+T+06:00 a 11:00  (5 min)  Datos por SQL
+  - bash ejecutar_consultas.sh  y proyectar el bloque 01 (conteos) y TOTALES (cifras del Integrante 1).
+  - Mostrar 06_integridad.sql con 0 hallazgos. Mostrar que el usuario es de solo lectura (rol_lectura_probar.sql).
+T+11:00 a 13:00  (2 min)  PDF en carpeta
+  - ls -1 /var/lib/quetzalmart/facturas_pdf/*.pdf | wc -l  (conteo inicial anotado en A11).
+  - Abrir uno y comparar su numero con la factura en Odoo.
+T+13:00 a 18:00  (5 min)  Factura nueva en vivo
+  1. Registrar conteo de facturas de cliente publicadas (01 fila 8) y de PDF en carpeta.
+  2. Ventas > Pedidos > Pedidos: elegir un pedido "Por facturar" (invoice_status to invoice) ; Crear factura > Factura normal > Crear borrador > Confirmar.
+  3. Anotar el numero de la factura nueva (INV/AAAA/NNNNN).
+  4. Esperar como maximo 60 s al temporizador (mientras tanto explicar el flujo) y ejecutar: ls -t /var/lib/quetzalmart/facturas_pdf | head -3
+  5. Comprobar que el PDF nuevo aparece con el numero anotado, que el conteo de la carpeta subio en 1 y que la consulta 01 fila 8 subio en 1.
+  6. Abrir el PDF nuevo y mostrar el mismo numero, cliente y total que la factura en Odoo.
+  Si el PDF no aparece en 90 s: ejecutar sudo systemctl start quetzalmart-exportador.service y revisar sudo journalctl -u quetzalmart-exportador -n 20 --no-pager.
+T+18:00 a 20:00  (2 min)  Cierre
+  - Mostrar los tres manuales PDF y el comprobante de entrega en UEDI.
+  - Recordar que la factura nueva en vivo quedo publicada (ver seccion F).
+
+======================================================================
+D. REQUISITOS BLOQUEANTES
+======================================================================
+D1 Odoo Community en la nube
+   Demostrar: login HTTPS; en la VM, dpkg -l | grep -i odoo y systemctl status odoo.
+D2 Base de datos relacional en la nube
+   Demostrar: consola Cloud SQL (instancia en ejecucion) y psql a la base; sin IP publica.
+   Riesgo: el enunciado lista MySQL/Oracle/SQL Server; PostgreSQL pendiente de aceptacion del docente (AR seccion 10, punto 1).
+D3 Consultas SQL preparadas
+   Demostrar: paquete sql/ (01 a 06, ejecutar_consultas.sh, demo_final.sql) y rol de solo lectura funcionando.
+D4 Sin copias
+   Demostrar: prefijo I1- en todos los datos propios, scripts propios, historial del repositorio como evidencia (solo lectura).
+D5 Entrega a tiempo en UEDI
+   Verificar: los 3 manuales PDF cargados antes de la fecha limite y comprobante de entrega.
+D6 Tres manuales PDF
+   Verificar: existen, completos, sin credenciales ni IP visibles en las imagenes (ver plan_capturas.txt).
+
+======================================================================
+E. PLAN DE FALLO
+======================================================================
+E1 Odoo no responde: sudo journalctl -u odoo -n 50 --no-pager ; sudo systemctl restart odoo.
+E2 Error 502 en Nginx: revisar que Odoo escuche en 8069; sudo nginx -t ; sudo systemctl restart nginx.
+E3 Odoo no conecta a la base: confirmar Cloud SQL RUNNABLE y alcance de su IP privada desde la VM.
+E4 El PDF no se genera: wkhtmltopdf --version (0.12.6.1 con Qt parcheado); log de Odoo.
+E5 Advertencia de certificado: bash verificar_certificado.sh; revisar que la IP coincide con la del certificado; renovacion con certbot (aprobacion del usuario).
+E6 Exportador sin actividad: systemctl status quetzalmart-exportador.timer ; sudo systemctl start quetzalmart-exportador.service.
+E7 Respaldo en reversa: ops/runbook_demo.txt seccion 6.
+E8 Cualquier comando GCP requiere aprobacion del usuario.
+
+======================================================================
+F. DESPUES DE LA CALIFICACION
+======================================================================
+[ ] F1 La factura creada en vivo queda publicada (no se borra). Si se desea retirarla, solo por cancelacion: reabrir a borrador y cancelar; nunca DELETE de facturas publicadas.
+[ ] F2 Si se uso el ensayo por script: python ensayo_extremo_a_extremo.py --limpiar, retirar de la carpeta el PDF que el reporte indique y volver a correr bloque 01 y TOTALES.
+[ ] F3 Ejecutar ops/espejo_local.ps1 para conservar copia de los PDF antes de apagar.
+[ ] F4 Detener o eliminar recursos segun AR secciones 7 y 9 (con aprobacion del usuario).

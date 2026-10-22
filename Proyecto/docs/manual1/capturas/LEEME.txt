@@ -1,0 +1,1 @@
+Guarde aqui las capturas reales como cap_NN.png (por ejemplo cap_01.png). El generador del manual las inserta solo si existen.
