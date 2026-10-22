@@ -1,0 +1,11 @@
+[Unit]
+Description=Quetzalmart - exportador de facturas PDF cada 60 segundos
+
+[Timer]
+OnBootSec=60s
+OnUnitInactiveSec=60s
+AccuracySec=1s
+Unit=quetzalmart-exportador.service
+
+[Install]
+WantedBy=timers.target
