@@ -1,0 +1,549 @@
+{
+  "portada": {
+    "titulo": "Manual 1: Instalación, funcionamiento y carga masiva del ERP Odoo",
+    "subtitulo": "QuetzalMart: Odoo 18 Community en Google Cloud",
+    "curso": "Sistemas Organizacionales y Gerenciales 2 (SOG2)",
+    "universidad": "Universidad de San Carlos de Guatemala, Facultad de Ingeniería",
+    "grupo": "Grupo 15",
+    "integrante": "Integrante 1: infraestructura, instalación y carga de datos",
+    "fecha": "Octubre de 2026"
+  },
+  "capturas": {
+    "1": "Panel del proyecto soyg2-practica1-g15 en la consola de Google Cloud, con la facturación vinculada",
+    "2": "APIs y servicios habilitados del proyecto",
+    "3": "Red VPC con el rango reservado y la conexión de peering para el acceso privado a servicios",
+    "4": "Reglas de firewall de la red, con la etiqueta de red de la VM",
+    "5": "Instancia de VM quetzalmart-odoo en ejecución (con las direcciones IP ocultas)",
+    "6": "Instancia de Cloud SQL quetzalmart-postgres: PostgreSQL 16, db-f1-micro, ejecutándose",
+    "7": "Conexiones de la instancia de Cloud SQL: IP pública desactivada e IP privada activada",
+    "8": "Bases de datos y usuarios de la instancia de Cloud SQL",
+    "9": "Lista de secretos en Secret Manager (sin revelar versiones)",
+    "10": "Servicio odoo activo en la VM, consultado por SSH a través de IAP",
+    "11": "Versión instalada de Odoo y parámetros de odoo.conf sin claves",
+    "12": "Puertos en escucha y validación de la configuración de Nginx",
+    "13": "Pantalla de inicio de sesión de Odoo por HTTPS",
+    "14": "Aplicaciones instaladas en Odoo",
+    "15": "Ejecución del script de carga por XML-RPC",
+    "16": "Resumen final de la carga con las cantidades por modelo",
+    "17": "Código del cargador: funciones por modelo de Odoo",
+    "18": "Datos fuente de la carga",
+    "19": "Consulta SQL de ventas confirmadas",
+    "20": "Consulta SQL de cotizaciones",
+    "21": "Consultas SQL de empleados, cargos y departamentos",
+    "22": "Consulta SQL de compras con factura de proveedor",
+    "23": "Consultas SQL de materiales y facturas de cliente",
+    "24": "Consulta SQL de documentos de respaldo",
+    "25": "Lista de clientes cargados",
+    "26": "Ficha de un cliente",
+    "28": "Lista de cotizaciones",
+    "29": "Formulario de una cotización antes de confirmar",
+    "30": "Cotización confirmada convertida en pedido de venta",
+    "31": "Lista de pedidos de venta",
+    "32": "Detalle de un pedido de venta confirmado",
+    "33": "Catálogo de productos y materiales",
+    "34": "Solicitudes de presupuesto de compra",
+    "35": "Orden de compra confirmada",
+    "36": "Lista de órdenes de compra",
+    "37": "Factura de proveedor ligada a una orden de compra",
+    "38": "Lista de facturas de proveedor",
+    "39": "Asistente Crear factura desde un pedido de venta",
+    "40": "Factura de cliente publicada",
+    "41": "Lista de facturas de cliente",
+    "42": "Vista previa del PDF de una factura",
+    "43": "Carpeta con los PDF de facturas",
+    "44": "PDF de la carpeta abierto en un visor",
+    "51": "Menú principal de Ventas",
+    "52": "Menú principal de Compras",
+    "53": "Menú principal de Facturación",
+    "54": "Menú principal de Empleados"
+  },
+  "secciones": [
+    {
+      "id": "1",
+      "titulo": "1. Instalación del sistema",
+      "bloques": [
+        {"t": "p", "texto": "Esta sección describe cómo se instaló y configuró el sistema con el que se presenta el proyecto: Odoo 18 Community Edition sobre una máquina virtual de Google Cloud, con la base de datos en Cloud SQL para PostgreSQL y un servidor Nginx como punto único de entrada. El orden de las subsecciones sigue el orden real de construcción: proyecto, red, máquina virtual, base de datos, Odoo, secretos, HTTPS y verificación."},
+        {"t": "p", "texto": "Convención: las referencias «Captura N» remiten a imágenes tomadas del sistema desplegado. Los valores sensibles (direcciones IP, contraseñas y secretos) no aparecen en el texto ni en las imágenes; en los comandos se representan con marcadores entre ángulos, por ejemplo <ZONA>."}
+      ],
+      "subs": [
+        {
+          "id": "1.1",
+          "titulo": "1.1 Objetivo y alcance",
+          "bloques": [
+            {"t": "p", "texto": "El objetivo es disponer de un ERP funcional en la nube para la empresa ficticia QuetzalMart, con los módulos de Ventas, Compras, Facturación y Empleados cargados con datos y consultables tanto desde la interfaz web como mediante consultas SQL a la base de datos relacional."},
+            {"t": "table", "cols": ["Elemento", "Decisión"], "filas": [
+              ["ERP", "Odoo 18 Community, versión 18.0-20261017, instalado desde el paquete oficial"],
+              ["Nube", "Google Cloud, proyecto soyg2-practica1-g15, región us-central1"],
+              ["Servidor", "Máquina virtual de Compute Engine con Ubuntu 22.04"],
+              ["Base de datos", "Cloud SQL para PostgreSQL 16, solo con IP privada"],
+              ["Acceso web", "Nginx como proxy inverso con HTTPS"],
+              ["Moneda y país", "Guatemala, quetzal (GTQ), IVA de 12 % incluido en el precio"]
+            ]},
+            {"t": "p", "texto": "Quedan fuera de este manual el portal web y CRM, la gestión documental y la automatización con RPA, cuyos responsables las documentan en sus propios apartados."}
+          ]
+        },
+        {
+          "id": "1.2",
+          "titulo": "1.2 Arquitectura de la solución",
+          "bloques": [
+            {"t": "p", "texto": "Los usuarios acceden por HTTPS al puerto 443 de la máquina virtual, donde Nginx termina el cifrado y reenvía la petición a Odoo, que escucha únicamente en la dirección local de la máquina. Odoo consulta la base de datos de Cloud SQL a través de la red privada de la VPC. El administrador entra por SSH usando Identity-Aware Proxy (IAP), sin exponer el puerto 22 a Internet. El diagrama completo en formato Mermaid se encuentra en el documento de arquitectura del repositorio."},
+            {"t": "p", "texto": "Ruta de una petición web:"},
+            {"t": "ol", "items": [
+              "El navegador abre una página por HTTPS (puerto 443).",
+              "El firewall de la VPC permite el tráfico y lo entrega a Nginx.",
+              "Nginx reenvía la petición por HTTP local al puerto 8069 de Odoo con las cabeceras X-Forwarded.",
+              "Odoo consulta la base quetzalmart_db en Cloud SQL por el puerto 5432 de la red privada.",
+              "Odoo devuelve la página a Nginx y este la entrega al navegador por HTTPS."
+            ]},
+            {"t": "table", "cols": ["Componente", "Función", "Detalle"], "filas": [
+              ["VM de Compute Engine", "Ejecuta Odoo y Nginx", "Ubuntu 22.04, e2-standard-2 (2 vCPU, 8 GB), disco equilibrado de 50 GB, IP externa estática reservada"],
+              ["Odoo 18 Community", "ERP con Ventas, Compras, Facturación y Empleados", "Paquete oficial, servicio systemd con el usuario odoo, archivos adjuntos en el disco de la VM"],
+              ["Nginx", "Proxy inverso y terminación TLS", "Únicos puertos públicos: 80 y 443"],
+              ["Cloud SQL para PostgreSQL", "Base de datos del ERP", "PostgreSQL 16, db-f1-micro, solo IP privada, respaldos automáticos"],
+              ["Secret Manager", "Custodia de contraseñas", "Ningún secreto en scripts ni en el repositorio"],
+              ["Firewall de la VPC", "Control del tráfico entrante", "Ver tabla de puertos"]
+            ]},
+            {"t": "table", "cols": ["Origen", "Destino", "Puerto", "Observación"], "filas": [
+              ["Internet", "Nginx", "80", "HTTP; solo redirige a HTTPS y atiende la validación del certificado"],
+              ["Internet", "Nginx", "443", "HTTPS"],
+              ["Nginx", "Odoo", "8069", "HTTP, solo localhost"],
+              ["Nginx", "Odoo", "8072", "WebSocket (/websocket), solo localhost"],
+              ["Odoo", "Cloud SQL", "5432", "PostgreSQL, solo red privada de la VPC"],
+              ["Administrador", "VM", "22", "SSH únicamente a través de IAP"]
+            ]},
+            {"t": "p", "texto": "Reglas de diseño que se respetaron en toda la instalación: Odoo escucha solo en la interfaz local (loopback) de la VM y nunca queda expuesto directamente a Internet; Cloud SQL no tiene IP pública; con workers mayor que cero Odoo atiende el websocket en el puerto 8072 y Nginx reenvía /websocket a ese puerto; con Nginx delante Odoo se inicia con proxy_mode activado."}
+          ]
+        },
+        {
+          "id": "1.3",
+          "titulo": "1.3 Preparación del proyecto en Google Cloud",
+          "bloques": [
+            {"t": "p", "texto": "Se trabajó en el proyecto soyg2-practica1-g15, con la facturación habilitada. Para poder crear los recursos se habilitaron las API de Compute Engine, Cloud SQL Admin, Secret Manager, Service Networking e IAP."},
+            {"t": "cap", "n": 1},
+            {"t": "cap", "n": 2},
+            {"t": "p", "texto": "Comandos de referencia equivalentes a los pasos realizados (se ejecutan con una cuenta personal autenticada con gcloud auth login; los valores entre ángulos se sustituyen):"},
+            {"t": "code", "texto": "gcloud config set project soyg2-practica1-g15\ngcloud services enable compute.googleapis.com sqladmin.googleapis.com \\\n  secretmanager.googleapis.com servicenetworking.googleapis.com iap.googleapis.com"},
+            {"t": "h3", "texto": "Acceso privado a servicios"},
+            {"t": "p", "texto": "Cloud SQL solo tiene IP privada. Para ello, antes de crear la instancia, se reservó un rango de direcciones internas y se creó la conexión de peering entre la VPC y Google Service Networking."},
+            {"t": "code", "texto": "gcloud compute addresses create <NOMBRE_RANGO> --global --purpose=VPC_PEERING \\\n  --prefix-length=16 --network=default\ngcloud services vpc-peerings connect --service=servicenetworking.googleapis.com \\\n  --ranges=<NOMBRE_RANGO> --network=default"},
+            {"t": "cap", "n": 3}
+          ]
+        },
+        {
+          "id": "1.4",
+          "titulo": "1.4 Red y firewall",
+          "bloques": [
+            {"t": "p", "texto": "Se utilizó la red VPC default y se aplicó una política de mínimo acceso mediante una etiqueta de red (quetzalmart-odoo) asignada a la máquina virtual. Existen dos reglas de entrada: quetzalmart-allow-web, que permite los puertos 80 y 443, y quetzalmart-allow-iap-ssh, que permite el puerto 22 únicamente desde el rango que Google publica para IAP. Las reglas abiertas por defecto para SSH y RDP se eliminaron. Los puertos 8069 y 8072 no tienen regla de entrada, por lo que son inaccesibles desde Internet."},
+            {"t": "code", "texto": "gcloud compute firewall-rules create quetzalmart-allow-web --network=default \\\n  --direction=INGRESS --allow=tcp:80,tcp:443 --target-tags=quetzalmart-odoo\ngcloud compute firewall-rules create quetzalmart-allow-iap-ssh --network=default \\\n  --direction=INGRESS --allow=tcp:22 --source-ranges=<RANGO_IAP_DE_GOOGLE> \\\n  --target-tags=quetzalmart-odoo"},
+            {"t": "cap", "n": 4}
+          ]
+        },
+        {
+          "id": "1.5",
+          "titulo": "1.5 Máquina virtual",
+          "bloques": [
+            {"t": "p", "texto": "La máquina virtual quetzalmart-odoo usa el tipo e2-standard-2 (2 vCPU y 8 GB de memoria), Ubuntu 22.04 LTS y un disco equilibrado de 50 GB, en la zona us-central1-a. Tiene una dirección IP externa estática reservada con el nombre quetzalmart-odoo-ip, necesaria para que el certificado HTTPS siga apuntando al servidor aunque la máquina se apague. El acceso administrativo es por SSH a través de IAP."},
+            {"t": "code", "texto": "gcloud compute addresses create quetzalmart-odoo-ip --region=us-central1\ngcloud compute instances create quetzalmart-odoo --zone=us-central1-a \\\n  --machine-type=e2-standard-2 --image-family=ubuntu-2204-lts \\\n  --image-project=ubuntu-os-cloud --boot-disk-size=50GB --boot-disk-type=pd-balanced \\\n  --tags=quetzalmart-odoo --address=quetzalmart-odoo-ip\n\n# Acceso administrativo por IAP\ngcloud compute ssh quetzalmart-odoo --zone=us-central1-a --tunnel-through-iap"},
+            {"t": "cap", "n": 5}
+          ]
+        },
+        {
+          "id": "1.6",
+          "titulo": "1.6 Base de datos en la nube: Cloud SQL para PostgreSQL",
+          "bloques": [
+            {"t": "p", "texto": "La base de datos relacional se implementó en Cloud SQL con PostgreSQL 16, tamaño db-f1-micro, región us-central1, solo con IP privada y respaldos automáticos habilitados. Se creó la base quetzalmart_db y un usuario dedicado odoo con permisos sobre esa base; Odoo nunca usa la cuenta administrativa postgres."},
+            {"t": "code", "texto": "gcloud sql instances create quetzalmart-postgres --database-version=POSTGRES_16 \\\n  --edition=ENTERPRISE --tier=db-f1-micro --region=us-central1 \\\n  --network=default --no-assign-ip --storage-size=10GB --backup\ngcloud sql databases create quetzalmart_db --instance=quetzalmart-postgres\ngcloud sql users create odoo --instance=quetzalmart-postgres --prompt-for-password"},
+            {"t": "cap", "n": 6},
+            {"t": "cap", "n": 7},
+            {"t": "cap", "n": 8}
+          ],
+          "subs": [
+            {
+              "id": "1.6.1",
+              "titulo": "1.6.1 Justificación de PostgreSQL frente a la lista del enunciado",
+              "bloques": [
+                {"t": "p", "texto": "El enunciado enumera otros motores relacionales como opciones de base de datos. Se eligió PostgreSQL por una razón técnica de fondo: Odoo solo soporta PostgreSQL como motor; no puede operar sobre MySQL, Oracle ni SQL Server. Cambiar de motor implicaría abandonar Odoo, que es el ERP exigido. PostgreSQL cumple igualmente el requisito de fondo del enunciado: es una base de datos relacional, está implementada en la nube y se puede consultar mediante SQL."},
+                {"t": "note", "texto": "Estado de la aceptación: el equipo acordó PostgreSQL. A la fecha de redacción no consta en el repositorio una respuesta del docente que lo confirme; si se obtiene, debe anotarse aquí. Se mantiene como riesgo conocido (sección 1.14)."}
+              ]
+            }
+          ]
+        },
+        {
+          "id": "1.7",
+          "titulo": "1.7 Instalación de Odoo 18",
+          "bloques": [
+            {"t": "p", "texto": "Odoo se instaló en la máquina virtual desde el paquete oficial de Odoo 18 (compilación 18.0-20261017) mediante el gestor de paquetes, lo que crea el usuario del sistema odoo, el archivo /etc/odoo/odoo.conf y el servicio systemd. Comandos de referencia:"},
+            {"t": "code", "texto": "sudo apt-get update\n# Añadir el repositorio oficial de Odoo 18 y su llave, según la documentación de Odoo\nsudo apt-get install -y odoo\nsudo systemctl enable --now odoo"},
+            {"t": "h3", "texto": "Configuración de odoo.conf"},
+            {"t": "p", "texto": "El archivo /etc/odoo/odoo.conf tiene permisos 640 y propietario odoo. Los parámetros relevantes son los siguientes; las claves de base de datos y del administrador se escriben únicamente en el archivo real de la VM y nunca se reproducen en este manual."},
+            {"t": "table", "cols": ["Parámetro", "Valor", "Motivo"], "filas": [
+              ["http_interface", "dirección de loopback (solo local)","Odoo solo escucha en local; Nginx es la única entrada"],
+              ["proxy_mode", "True", "Odoo confía en las cabeceras X-Forwarded de Nginx"],
+              ["workers", "2", "Activa el modo multiproceso y el websocket en el puerto 8072"],
+              ["db_host", "IP privada de Cloud SQL", "Conexión por la red privada de la VPC"],
+              ["db_user", "odoo", "Usuario dedicado, distinto de postgres"]
+            ]},
+            {"t": "h3", "texto": "wkhtmltopdf"},
+            {"t": "p", "texto": "La impresión de facturas y demás informes en PDF requiere wkhtmltopdf en la versión 0.12.6.1 con Qt parcheado, que es la que Odoo soporta; la versión del repositorio de Ubuntu no incluye ese parche. Se instaló el paquete oficial para Ubuntu 22.04 (jammy) y se comprobó su versión."},
+            {"t": "code", "texto": "# Con el paquete .deb oficial de wkhtmltopdf 0.12.6.1 para jammy ya descargado\nsudo apt-get install -y ./wkhtmltox_0.12.6.1-2.jammy_amd64.deb\nwkhtmltopdf --version"},
+            {"t": "h3", "texto": "Inicialización de la base y módulos"},
+            {"t": "p", "texto": "La base quetzalmart_db se inicializó sin datos de demostración y se instalaron los módulos Ventas (sale_management), Compras (purchase), Facturación (account) y Empleados (hr), además de la gestión documental a cargo de otro integrante. Equivalente en línea de comandos:"},
+            {"t": "code", "texto": "sudo -u odoo odoo -c /etc/odoo/odoo.conf -d quetzalmart_db \\\n  -i base,sale_management,purchase,account,hr \\\n  --without-demo=all --stop-after-init"},
+            {"t": "cap", "n": 10},
+            {"t": "cap", "n": 11},
+            {"t": "cap", "n": 14}
+          ]
+        },
+        {
+          "id": "1.8",
+          "titulo": "1.8 Manejo de secretos",
+          "bloques": [
+            {"t": "p", "texto": "Ninguna contraseña se escribe en scripts, documentos ni en el repositorio. Las contraseñas de la base de datos y del administrador de Odoo, la del gestor de bases de datos y las iniciales de las cuentas personales de los integrantes se guardan como secretos en Secret Manager. La configuración real de Odoo vive en /etc/odoo/odoo.conf con permisos restringidos; el archivo está en .gitignore y en el repositorio solo existen archivos de ejemplo."},
+            {"t": "ul", "items": [
+              "Los scripts de carga leen la clave desde una variable de entorno que el operador define en su sesión; no se pasa por línea de comandos ni se imprime.",
+              "Cada integrante usa una cuenta propia en Odoo con permisos para su bloque.",
+              "Los secretos se consultan solo cuando se necesitan y por una cuenta personal autenticada.",
+              "Las consultas de demostración usan un usuario de solo lectura, distinto del usuario que usa Odoo."
+            ]},
+            {"t": "code", "texto": "# Listar secretos (muestra nombres, no valores)\ngcloud secrets list --project=soyg2-practica1-g15"},
+            {"t": "cap", "n": 9}
+          ]
+        },
+        {
+          "id": "1.9",
+          "titulo": "1.9 Nginx y HTTPS",
+          "bloques": [
+            {"t": "p", "texto": "Nginx actúa como proxy inverso. Su configuración redirige el puerto 80 al 443, reenvía el tráfico web a Odoo en el puerto 8069 y la ruta /websocket al puerto 8072, restringe los protocolos TLS a las versiones 1.2 y 1.3 y conserva en el puerto 80 la ruta /.well-known/acme-challenge/ necesaria para validar el certificado."},
+            {"t": "h3", "texto": "Certificado público de Let's Encrypt para la IP"},
+            {"t": "p", "texto": "El equipo no dispone de dominio, por lo que se emitió un certificado público de Let's Encrypt para la dirección IP reservada, usando el perfil de corta duración que esa entidad ofrece para direcciones IP. Al ser un certificado de una entidad pública, el navegador lo acepta sin advertencias y las herramientas verifican TLS de forma normal. (La primera versión del despliegue usó un certificado autofirmado, que ya fue sustituido.)"},
+            {"t": "p", "texto": "La renovación es automática: Certbot 5.8.0 tiene un temporizador de renovación y un gancho que comprueba la configuración y recarga Nginx; la simulación de renovación terminó correctamente. Como el certificado es de corta duración, la renovación depende de que la IP reservada siga apuntando a la VM y de que el puerto 80 sirva la ruta de validación."},
+            {"t": "code", "texto": "sudo nginx -t\nsudo systemctl reload nginx\nsudo /snap/bin/certbot certificates\nsudo /snap/bin/certbot renew --dry-run\nsystemctl status snap.certbot.renew.timer"},
+            {"t": "cap", "n": 12},
+            {"t": "cap", "n": 13}
+          ]
+        },
+        {
+          "id": "1.10",
+          "titulo": "1.10 Configuración de la empresa",
+          "bloques": [
+            {"t": "p", "texto": "La empresa se configuró como QuetzalMart, localizada en Guatemala. Se activó la moneda quetzal (GTQ), se asignó Guatemala como país de la empresa y se cargó el plan contable de Guatemala (localización l10n_gt). Los impuestos usados son el IVA de 12 % incluido en el precio, tanto para ventas como para compras. Todos los importes de los documentos cargados están en GTQ."},
+            {"t": "table", "cols": ["Parámetro", "Valor"], "filas": [
+              ["Empresa", "QuetzalMart"],
+              ["País", "Guatemala"],
+              ["Moneda", "Quetzal (GTQ)"],
+              ["Plan contable", "Localización de Guatemala (gt)"],
+              ["Impuesto", "IVA 12 % incluido en el precio (ventas y compras)"]
+            ]}
+          ]
+        },
+        {
+          "id": "1.11",
+          "titulo": "1.11 Verificación de la instalación",
+          "bloques": [
+            {"t": "p", "texto": "La instalación se comprobó con las siguientes pruebas, repetibles en cualquier momento:"},
+            {"t": "table", "cols": ["Prueba", "Resultado esperado", "Evidencia"], "filas": [
+              ["Petición externa HEAD a /web/login", "HTTP 200 con verificación TLS normal", "Captura 13"],
+              ["Estado del servicio de Odoo", "active (running)", "Captura 10"],
+              ["Versión y parámetros de Odoo", "18.0-20261017, workers = 2, proxy_mode activo, escucha local", "Captura 11"],
+              ["Puertos en escucha", "Nginx en 80 y 443; Odoo en local 8069 y 8072", "Captura 12"],
+              ["Conexión de Odoo a la base", "odoo shell carga los 71 módulos de la base y conecta como el usuario odoo a la IP privada de Cloud SQL", "Salida de la consola de la VM"],
+              ["Generación de PDF", "wkhtmltopdf 0.12.6.1 imprime la factura", "Captura 42"]
+            ]},
+            {"t": "code", "texto": "sudo systemctl is-active odoo\nsudo nginx -t\nsudo ss -tlnp | grep -E ':(80|443|8069|8072)\\b'\ndpkg -l | grep -i odoo\nwkhtmltopdf --version"}
+          ]
+        },
+        {
+          "id": "1.12",
+          "titulo": "1.12 Respaldos",
+          "bloques": [
+            {"t": "ul", "items": [
+              "Cloud SQL: respaldos automáticos habilitados en la instancia.",
+              "Disco de la VM (incluye los archivos adjuntos de Odoo): política de instantáneas diarias con retención de siete días, más una instantánea inicial creada y verificada.",
+              "Antes de cargas de datos importantes se crea además un respaldo de Cloud SQL bajo demanda."
+            ]}
+          ]
+        },
+        {
+          "id": "1.13",
+          "titulo": "1.13 Costos y apagado de recursos",
+          "bloques": [
+            {"t": "p", "texto": "La máquina virtual y la instancia de Cloud SQL facturan mientras existen. Con ambas encendidas durante todo el mes el costo es de aproximadamente 56 USD mensuales en us-central1, antes de discos, instantáneas, tráfico y otros cargos. Por ello la política del equipo es apagar los recursos fuera de las sesiones de trabajo y de calificación, y detenerlos o eliminarlos al terminar la calificación."},
+            {"t": "code", "texto": "# Apagar al terminar la sesión\ngcloud compute instances stop quetzalmart-odoo --zone=us-central1-a\ngcloud sql instances patch quetzalmart-postgres --activation-policy=NEVER\n\n# Encender antes de una sesión\ngcloud sql instances patch quetzalmart-postgres --activation-policy=ALWAYS\ngcloud compute instances start quetzalmart-odoo --zone=us-central1-a"},
+            {"t": "note", "texto": "Con Cloud SQL detenida, Odoo no puede atender peticiones. Antes de abrir la interfaz hay que encender primero la base y esperar a que quede en estado RUNNABLE."}
+          ]
+        },
+        {
+          "id": "1.14",
+          "titulo": "1.14 Riesgos conocidos",
+          "bloques": [
+            {"t": "table", "cols": ["Riesgo", "Descripción", "Mitigación"], "filas": [
+              ["Motor de base de datos", "El enunciado enumera otros motores; Odoo solo usa PostgreSQL", "Justificación técnica (sección 1.6.1); registrar la respuesta del docente si se obtiene"],
+              ["Certificado de corta duración", "Depende de la IP reservada y del puerto 80 para renovarse", "Renovación automática con Certbot; verificar con el comando certificates antes de cada presentación"],
+              ["Recursos apagados", "Con la VM o Cloud SQL detenidas el sistema no responde", "Lista de encendido previa a cada sesión y a la calificación"],
+              ["Dimensionamiento", "db-f1-micro es de núcleo compartido y no tiene SLA de Cloud SQL; el dimensionamiento no se ha medido con la carga completa", "Cargas por lotes pequeños con pausa; supervisar rendimiento durante la carga"],
+              ["Costos", "Los recursos encendidos generan cargos", "Apagar fuera de sesión y eliminar al terminar la calificación"]
+            ]}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "titulo": "2. Funcionamiento de cada módulo",
+      "fuente_externa": "funcionamiento_modulos.txt"
+    },
+    {
+      "id": "3",
+      "titulo": "3. Carga masiva y operación",
+      "bloques": [
+        {"t": "p", "texto": "Esta sección documenta cómo se cargaron los datos y cómo se generaron los documentos de cada módulo. La carga masiva se hizo con scripts en Python que usan la API externa de Odoo (XML-RPC), no a mano, y se comprobó contra la base de datos con consultas SQL."}
+      ],
+      "subs": [
+        {
+          "id": "3.1",
+          "titulo": "3.1 Estrategia de carga",
+          "bloques": [
+            {"t": "p", "texto": "El cargador (cargador_xmlrpc.py) se conecta a Odoo por XML-RPC con un usuario de la aplicación, crea los registros en el orden en que dependen entre sí y es idempotente: antes de crear cada registro busca si ya existe por su referencia, de modo que una segunda ejecución no genera duplicados. Los registros se crean en lotes pequeños (5 por defecto) con una pausa entre lotes (1 segundo por defecto) para no sobrecargar la base db-f1-micro. Todos los registros de esta porción llevan la referencia con prefijo I1-, lo que permite contarlos y distinguirlos de los de otros integrantes."},
+            {"t": "p", "texto": "Orden de carga:"},
+            {"t": "ol", "items": [
+              "Datos maestros: departamentos, cargos, empleados, clientes y proveedores (contactos), productos de venta y materiales.",
+              "Ventas confirmadas y cotizaciones.",
+              "Órdenes de compra confirmadas.",
+              "Facturas de proveedor registradas y publicadas.",
+              "Facturas de cliente generadas desde las ventas con el asistente estándar de Odoo y publicadas.",
+              "Documentos de respaldo adjuntos a órdenes de compra."
+            ]},
+            {"t": "p", "texto": "La interfaz de Odoo de esta instalación está en inglés (en_US): en este manual las opciones de menú y los botones se citan en inglés con su equivalente en español entre paréntesis. Cifras de la porción del Integrante 1, verificadas en la base. La columna del enunciado es el mínimo del equipo completo; el resto lo aportan los demás integrantes. Todos los importes están en GTQ."},
+            {"t": "table", "cols": ["Dato", "Cargado por el Integrante 1", "Mínimo del enunciado (equipo)"], "filas": [
+              ["Ventas confirmadas", "50", "150"],
+              ["Cotizaciones", "7", "20"],
+              ["Compras con factura", "33", "100"],
+              ["Facturas de proveedor", "33", "(incluidas en las compras)"],
+              ["Facturas de cliente", "17", "50"],
+              ["Materiales", "20", "60"],
+              ["Empleados", "12", "35"],
+              ["Cargos", "2", "6"],
+              ["Departamentos", "2", "5"],
+              ["Documentos de respaldo", "5", "15"],
+              ["PDF de facturas generados", "50", "50"]
+            ]},
+            {"t": "h3", "texto": "Ejecución del cargador"},
+            {"t": "p", "texto": "La conexión se configura con las variables de entorno ODOO_URL, ODOO_DB, ODOO_USER y ODOO_PASSWORD. Esta última se lee de forma interactiva o desde Secret Manager y nunca se escribe en el comando ni en un archivo. Primero se ejecuta una simulación que solo informa qué se crearía, y después la carga real:"},
+            {"t": "code", "texto": "export ODOO_URL=\"https://<HOST_DE_ODOO>\"\nexport ODOO_DB=\"quetzalmart_db\"\nexport ODOO_USER=\"<USUARIO_DE_ODOO>\"\nread -rs ODOO_PASSWORD && export ODOO_PASSWORD\n\n# 1) Simulación: no escribe nada en Odoo\npython cargador_xmlrpc.py --dry-run\n\n# 2) Carga real, en lotes de 5 con 1 segundo de pausa\npython cargador_xmlrpc.py --lote 5 --pausa 1.0"},
+            {"t": "p", "texto": "Al terminar, el cargador cuenta lo que existe en Odoo, lo compara con lo esperado y verifica además que el total de cada orden y factura coincida con el calculado (tolerancia de 0,01). Si todo coincide imprime «OK: conteos y totales coinciden»; si no, lista las discrepancias y termina con error."},
+            {"t": "cap", "n": 15},
+            {"t": "cap", "n": 16},
+            {"t": "cap", "n": 17},
+            {"t": "cap", "n": 18}
+          ]
+        },
+        {
+          "id": "3.2",
+          "titulo": "3.2 Carga masiva por módulo",
+          "bloques": [
+            {"t": "p", "texto": "Cada apartado indica el modelo de Odoo afectado, lo que hace la carga y cómo se comprueba."}
+          ],
+          "subs": [
+            {
+              "id": "3.2.1",
+              "titulo": "3.2.1 Clientes y proveedores",
+              "bloques": [
+                {"t": "table", "cols": ["Aspecto", "Detalle"], "filas": [
+                  ["Modelo", "res.partner (contactos)"],
+                  ["Identificación", "Referencia con prefijo I1-C- para clientes e I1-P- para proveedores"],
+                  ["Datos", "Nombre, NIT, teléfono con código +502, dirección y ciudad de Guatemala, correo; país Guatemala"],
+                  ["Verificación", "Búsqueda por prefijo de la referencia y comparación con la cantidad esperada"]
+                ]},
+                {"t": "cap", "n": 25},
+                {"t": "cap", "n": 26}
+              ]
+            },
+            {
+              "id": "3.2.2",
+              "titulo": "3.2.2 Productos y materiales",
+              "bloques": [
+                {"t": "p", "texto": "Se cargaron 40 productos de venta (abarrotes, lácteos, carnes, frutas, bebidas y limpieza) con códigos I1-PV- y 20 materiales de operación de sucursal (bolsas, empaques, guantes, papel térmico, uniformes y similares) con códigos I1-MAT-. Los materiales son productos que se compran y no se venden. Los precios están en GTQ con IVA de 12 % incluido."},
+                {"t": "cap", "n": 33}
+              ]
+            },
+            {
+              "id": "3.2.3",
+              "titulo": "3.2.3 Cargos, departamentos y empleados (porción del Integrante 1)",
+              "bloques": [
+                {"t": "p", "texto": "La porción del Integrante 1 comprende 2 departamentos (Operaciones de Tienda y Administracion y Compras), 2 cargos (Cajero de Sucursal y Analista de Compras) y 12 empleados, creados en los modelos hr.department, hr.job y hr.employee. La administración de empleados se documenta en el apartado 3.6."}
+              ]
+            },
+            {
+              "id": "3.2.4",
+              "titulo": "3.2.4 Cotizaciones y ventas",
+              "bloques": [
+                {"t": "table", "cols": ["Aspecto", "Detalle"], "filas": [
+                  ["Modelo", "sale.order"],
+                  ["Ventas", "50 órdenes creadas y confirmadas con action_confirm; luego se restituye la fecha del pedido a la planificada (de enero a septiembre de 2026)"],
+                  ["Cotizaciones", "7 órdenes que se dejan sin confirmar, algunas marcadas como enviadas con action_quotation_sent"],
+                  ["Identificación", "client_order_ref con prefijo I1-V- (ventas) e I1-Q- (cotizaciones)"],
+                  ["Verificación", "Consultas SQL de ventas y cotizaciones (apartado 3.9)"]
+                ]},
+                {"t": "cap", "n": 28},
+                {"t": "cap", "n": 31}
+              ]
+            },
+            {
+              "id": "3.2.5",
+              "titulo": "3.2.5 Compras",
+              "bloques": [
+                {"t": "table", "cols": ["Aspecto", "Detalle"], "filas": [
+                  ["Modelo", "purchase.order"],
+                  ["Compras", "33 órdenes de compra creadas y confirmadas con button_confirm"],
+                  ["Identificación", "partner_ref con prefijo I1-OC-"],
+                  ["Verificación", "Compra confirmada con factura de proveedor publicada vinculada (apartado 3.9)"]
+                ]},
+                {"t": "cap", "n": 36}
+              ]
+            },
+            {
+              "id": "3.2.6",
+              "titulo": "3.2.6 Facturas",
+              "bloques": [
+                {"t": "table", "cols": ["Aspecto", "Detalle"], "filas": [
+                  ["Modelo", "account.move"],
+                  ["Facturas de proveedor", "33, una por cada orden de compra, creadas como in_invoice y publicadas con action_post (referencia I1-FP-)"],
+                  ["Facturas de cliente", "17, generadas desde ventas confirmadas con el asistente estándar de Odoo y publicadas (referencia I1-FC-)"],
+                  ["Verificación", "Consultas SQL de compras con factura y de facturas de cliente (apartado 3.9)"]
+                ]},
+                {"t": "cap", "n": 38},
+                {"t": "cap", "n": 41}
+              ]
+            },
+            {
+              "id": "3.2.7",
+              "titulo": "3.2.7 Documentos de respaldo",
+              "bloques": [
+                {"t": "p", "texto": "Se crearon 5 adjuntos (ir.attachment) en formato PDF, generados en memoria por el propio script y vinculados a órdenes de compra, con nombre que inicia con I1-Respaldo-. Pueden crearse de forma independiente con adjuntar_respaldos.py, siempre que las órdenes de compra existan."}
+              ]
+            }
+          ]
+        },
+        {
+          "id": "3.3",
+          "titulo": "3.3 Cómo se generaron las órdenes de compra",
+          "bloques": [
+            {"t": "p", "texto": "En el sistema, una compra sigue el ciclo solicitud de presupuesto, orden de compra y factura de proveedor. El cargador reproduce ese ciclo con las mismas acciones que ejecuta la interfaz:"},
+            {"t": "ol", "items": [
+              "Se crea la solicitud de presupuesto (purchase.order en borrador) con el proveedor, las líneas de producto, cantidades y precios en GTQ.",
+              "Se confirma con button_confirm y la solicitud pasa al estado Orden de compra.",
+              "Se registra la factura de proveedor vinculada a las líneas de la orden y se publica con action_post."
+            ]},
+            {"t": "p", "texto": "Desde la interfaz el mismo flujo se realiza en Purchase > Orders > Requests for Quotation (Compras > Pedidos > Solicitudes de presupuesto): crear la solicitud con New (Nuevo), confirmarla con Confirm Order (Confirmar pedido) y, con el botón Create Bill (Crear factura), generar la factura de proveedor."},
+            {"t": "cap", "n": 34},
+            {"t": "cap", "n": 35},
+            {"t": "cap", "n": 37}
+          ]
+        },
+        {
+          "id": "3.4",
+          "titulo": "3.4 Cómo se generaron las ventas",
+          "bloques": [
+            {"t": "p", "texto": "Una venta nace como cotización y se convierte en pedido de venta al confirmarla:"},
+            {"t": "ol", "items": [
+              "Se crea la cotización (sale.order en borrador) con el cliente, las líneas de producto y el IVA de 12 % incluido.",
+              "Opcionalmente se marca como enviada.",
+              "Se confirma con el botón Confirm (Confirmar), que ejecuta action_confirm; el estado cambia a Sales Order (Pedido de venta) y se conserva el número correlativo S000xx.",
+              "Desde el pedido confirmado se puede crear la factura de cliente (apartado 3.7)."
+            ]},
+            {"t": "cap", "n": 29},
+            {"t": "cap", "n": 30},
+            {"t": "cap", "n": 32}
+          ]
+        },
+        {
+          "id": "3.5",
+          "titulo": "3.5 Manejo de clientes en CRM",
+          "bloques": [
+            {"t": "pend", "texto": "Apartado a cargo del Integrante 2. El CRM, el portal y la tienda no forman parte de esta instalación base; su documentación la aporta el integrante responsable."}
+          ]
+        },
+        {
+          "id": "3.6",
+          "titulo": "3.6 Administración de empleados",
+          "bloques": [
+            {"t": "pend", "texto": "Apartado a cargo del Integrante 3. La administración de empleados, cargos y departamentos la documenta el integrante responsable del módulo de Empleados."}
+          ]
+        },
+        {
+          "id": "3.7",
+          "titulo": "3.7 Generación de facturas",
+          "bloques": [
+            {"t": "p", "texto": "Las 17 facturas de cliente se generaron a partir de pedidos de venta confirmados, con el mismo asistente que usa la interfaz (Create Invoice). Pasos:"},
+            {"t": "ol", "items": [
+              "Abrir el pedido en Sales > Orders > Orders (Ventas > Pedidos > Pedidos) y pulsar Create Invoice (Crear factura).",
+              "En el asistente elegir Regular invoice (Factura normal) y confirmar; Odoo crea la factura en borrador con las líneas del pedido.",
+              "Revisar los importes y el IVA de 12 % incluido, y pulsar Confirm (Confirmar) para publicar la factura, que recibe su número correlativo.",
+              "Imprimir el PDF con Print > Invoices (Imprimir > Facturas)."
+            ]},
+            {"t": "p", "texto": "En el script la operación equivale a crear el registro del asistente sale.advance.payment.inv con el método de facturación de lo entregado y ejecutar create_invoices sobre la orden. Esa llamada devuelve en Odoo 18 una respuesta con valores nulos que XML-RPC no puede transportar; el servidor la rechaza aunque la factura ya se haya creado, por lo que el cargador tolera únicamente ese fallo específico y comprueba a continuación que la factura exista. Después se asignan la referencia y la fecha de la factura y se publica."},
+            {"t": "cap", "n": 39},
+            {"t": "cap", "n": 40},
+            {"t": "cap", "n": 42}
+          ]
+        },
+        {
+          "id": "3.8",
+          "titulo": "3.8 Carpeta de PDF de facturas",
+          "bloques": [
+            {"t": "p", "texto": "Los PDF se generan con el informe estándar de facturas de Odoo (account.report_invoice), que usa wkhtmltopdf. El script exportar_facturas_pdf.py se ejecuta dentro de odoo shell en la VM; recorre las facturas publicadas con la referencia I1- (de cliente y de proveedor) y escribe un archivo por factura en la carpeta indicada en la variable EXPORT_DIR."},
+            {"t": "code", "texto": "# Ejecutar en la VM; la carpeta de salida se define con EXPORT_DIR\nEXPORT_DIR=<CARPETA_DE_SALIDA> sudo -E -u odoo odoo shell -c /etc/odoo/odoo.conf \\\n  -d quetzalmart_db --no-http < exportar_facturas_pdf.py"},
+            {"t": "p", "texto": "El nombre de cada archivo combina el número de la factura y su referencia. La carpeta contiene 50 PDF: 33 de facturas de proveedor y 17 de cliente."},
+            {"t": "table", "cols": ["Tipo", "Cantidad", "Patrón del nombre"], "filas": [
+              ["Facturas de proveedor", "33", "BILL_AAAA_MM_NNNN_I1-FP-NNN.pdf"],
+              ["Facturas de cliente", "17", "INV_AAAA_NNNNN_I1-FC-NNN.pdf"],
+              ["Total", "50", ""]
+            ]},
+            {"t": "cap", "n": 43},
+            {"t": "cap", "n": 44}
+          ]
+        },
+        {
+          "id": "3.9",
+          "titulo": "3.9 Consultas SQL de verificación",
+          "bloques": [
+            {"t": "p", "texto": "Las cifras se comprueban con consultas SQL directamente sobre quetzalmart_db, con un usuario de solo lectura distinto del que usa Odoo. El acceso se hace desde la VM por IAP o mediante un túnel seguro; el puerto 5432 no se publica en Internet. El script ejecutar_consultas.sh corre los archivos SQL del repositorio dentro de una transacción de solo lectura, con las variables de entorno de conexión definidas en la sesión."},
+            {"t": "code", "texto": "-- Q1 Ventas confirmadas\nSELECT count(*) FROM sale_order WHERE state IN ('sale','done');\n-- Q2 Cotizaciones\nSELECT count(*) FROM sale_order WHERE state IN ('draft','sent');\n-- Q3 Empleados activos\nSELECT count(*) FROM hr_employee WHERE active;\n-- Q4 Cargos\nSELECT count(*) FROM hr_job;\n-- Q5 Departamentos activos\nSELECT count(*) FROM hr_department WHERE active;\n-- Q6 Compras con factura de proveedor publicada\nSELECT count(DISTINCT pol.order_id)\nFROM account_move_line aml\nJOIN purchase_order_line pol ON pol.id = aml.purchase_line_id\nJOIN account_move m ON m.id = aml.move_id\nWHERE m.move_type = 'in_invoice' AND m.state = 'posted';\n-- Q7 Materiales (comprables y no vendibles)\nSELECT count(*) FROM product_template\nWHERE active AND purchase_ok AND NOT sale_ok;\n-- Q8 Facturas de cliente publicadas\nSELECT count(*) FROM account_move\nWHERE move_type = 'out_invoice' AND state = 'posted';\n-- Q9 Documentos de respaldo\nSELECT count(*) FROM ir_attachment\nWHERE res_model = 'purchase.order' AND name LIKE 'I1-Respaldo-%';"},
+            {"t": "p", "texto": "Resultado de la porción del Integrante 1 (en las consultas que cuentan toda la base se filtra por el prefijo I1- para aislar la porción):"},
+            {"t": "table", "cols": ["Consulta", "Concepto", "Resultado Integrante 1"], "filas": [
+              ["Q1", "Ventas confirmadas", "50"],
+              ["Q2", "Cotizaciones", "7"],
+              ["Q3", "Empleados", "12"],
+              ["Q4", "Cargos", "2"],
+              ["Q5", "Departamentos", "2"],
+              ["Q6", "Compras con factura de proveedor", "33"],
+              ["Q7", "Materiales", "20"],
+              ["Q8", "Facturas de cliente", "17"],
+              ["Q9", "Documentos de respaldo", "5"]
+            ]},
+            {"t": "cap", "n": 19},
+            {"t": "cap", "n": 20},
+            {"t": "cap", "n": 21},
+            {"t": "cap", "n": 22},
+            {"t": "cap", "n": 23},
+            {"t": "cap", "n": 24}
+          ]
+        },
+        {
+          "id": "3.10",
+          "titulo": "3.10 Documentos de respaldo",
+          "bloques": [
+            {"t": "p", "texto": "El Integrante 1 aportó 5 documentos de respaldo, adjuntos a órdenes de compra y contabilizados con la consulta Q9 (Captura 24). La gestión documental completa, con su propio módulo, se documenta por separado a cargo de otro integrante."}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "titulo": "4. Automatización con RPA",
+      "bloques": [
+        {"t": "pend", "texto": "Sección a cargo del Integrante 3."}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,210 @@
+FUNCIONAMIENTO DE LOS MODULOS DE ODOO 18 UTILIZADOS POR EL INTEGRANTE 1
+Empresa QuetzalMart, Guatemala | moneda GTQ | plan contable gt (l10n_gt) | interfaz en ingles (en_US)
+
+CONVENCIONES DE ESTE DOCUMENTO
+- Los menus se escriben en ingles, con su equivalente en espanol entre parentesis.
+- Los estados citados (state, invoice_status, receipt_status, payment_state) se tomaron de
+  referencia/esquema_odoo.json: se muestra el codigo almacenado en la base y su etiqueta en ingles.
+- Nombre de tabla: Odoo crea una tabla por modelo cambiando los puntos por guiones bajos
+  (sale.order -> sale_order). El esquema JSON no incluye nombres de tabla; esta regla es de Odoo y
+  debe confirmarse con \dt en psql antes de citarla en el manual. Los modelos que NO estan en el
+  esquema (stock.move, stock.quant, res.lang, ir.sequence) se marcan "(fuera del esquema)".
+- Los nombres de tablas intermedias de relaciones many2many (por ejemplo los impuestos de una linea)
+  los genera Odoo; confirmar sus nombres exactos con \dt antes de citarlos.
+- Alcance: solo lo que toca al proyecto. Los modulos CRM, sitio web y gestion documental (dms) y
+  la nomina o asistencia de empleados corresponden al Integrante 3.
+
+======================================================================================
+2.1 VENTAS (modulo sale_management)
+======================================================================================
+Modelos y tablas
+  sale.order        -> tabla sale_order        cabecera: cliente (partner_id), fecha (date_order),
+                       vigencia (validity_date), referencia del cliente (client_order_ref),
+                       estado (state), estado de facturacion (invoice_status), montos
+                       amount_untaxed, amount_tax, amount_total.
+  sale.order.line   -> tabla sale_order_line   lineas: producto (product_id), cantidad
+                       (product_uom_qty), precio unitario (price_unit), impuesto (tax_id),
+                       cantidad entregada (qty_delivered) y facturada (qty_invoiced).
+  Cliente: res.partner -> tabla res_partner (customer_rank mayor que 0 para clientes).
+  Tarifa: se usa la tarifa Default en GTQ (pricelist_id de sale_order).
+
+Flujo cotizacion -> pedido de venta -> factura
+  1. Cotizacion. Menu: Sales > Orders > Quotations (Ventas > Pedidos > Cotizaciones). Boton New
+     (Nuevo). Se elige cliente, se agregan lineas (Add a product / Agregar un producto).
+     En la base: fila en sale_order con state = 'draft' (etiqueta Quotation).
+  2. Enviar. Boton Send (Enviar) o accion action_quotation_sent. Pasa a state = 'sent'
+     (Quotation Sent). Sigue siendo una cotizacion, no un compromiso de venta.
+  3. Confirmar. Boton Confirm (Confirmar). Pasa a state = 'sale' (Sales Order); la cotizacion pasa a
+     ser pedido de venta conservando su numero (campo name). Con productos almacenables, inventario crea la
+     transferencia de entrega (ver 2.4). Menu del pedido: Sales > Orders > Orders
+     (Ventas > Pedidos > Pedidos).
+  4. Estado de facturacion. El campo invoice_status vale 'to invoice' (To Invoice) mientras haya
+     cantidades por facturar, 'invoiced' (Fully Invoiced) cuando todo esta facturado, 'no'
+     (Nothing to Invoice) o 'upselling' (Upselling Opportunity).
+  5. Facturar. Boton Create Invoice (Crear factura) en el pedido: abre el asistente
+     (sale.advance.payment.inv, fuera del esquema) con la opcion Regular invoice
+     (Factura normal); al confirmar, nace una factura de cliente en borrador (ver 2.3).
+  6. Cancelar. Boton Cancel (Cancelar): state = 'cancel' (Cancelled).
+
+En los datos del proyecto
+  - 50 ventas confirmadas: state = 'sale', client_order_ref con prefijo I1-V-; de ellas 33 estan por
+    facturar (invoice_status = 'to invoice') y 17 facturadas (invoice_status = 'invoiced').
+  - 7 cotizaciones en borrador: client_order_ref con prefijo I1-Q-, state 'draft' (algunas pueden
+    figurar como 'sent' si se marcaron como enviadas).
+
+Reflejo en la base (resumen)
+  Cotizar     -> INSERT en sale_order (state draft) e INSERT de sus filas en sale_order_line.
+  Confirmar   -> UPDATE sale_order SET state = 'sale'; se crean filas de entrega en stock_picking.
+  Facturar    -> INSERT en account_move (move_type out_invoice) y account_move_line; el vinculo con
+                 la linea de venta queda en la relacion sale_line_ids de account.move.line y
+                 invoice_origin de account_move guarda el nombre del pedido; luego
+                 sale_order.invoice_status pasa a 'invoiced'.
+
+======================================================================================
+2.2 COMPRAS (modulo purchase)
+======================================================================================
+Modelos y tablas
+  purchase.order       -> tabla purchase_order       cabecera: proveedor (partner_id), referencia
+                          del proveedor (partner_ref), fecha del pedido (date_order), fecha de
+                          aprobacion (date_approve), llegada esperada (date_planned), estado
+                          (state), estado de facturacion (invoice_status), estado de recepcion
+                          (receipt_status), montos amount_untaxed, amount_tax, amount_total.
+  purchase.order.line  -> tabla purchase_order_line  lineas: producto (product_id), cantidad
+                          (product_qty), precio unitario (price_unit), impuestos (taxes_id),
+                          cantidad recibida (qty_received) y facturada (qty_invoiced).
+  Proveedor: res.partner con supplier_rank mayor que 0.
+
+Flujo solicitud de presupuesto -> orden de compra -> factura de proveedor
+  1. Solicitud de presupuesto (RFQ). Menu: Purchase > Orders > Requests for Quotation
+     (Compras > Pedidos > Solicitudes de presupuesto). Boton New (Nuevo). En la base:
+     purchase_order con state = 'draft' (etiqueta RFQ).
+  2. Enviar. Boton Send by Email (Enviar por correo): state = 'sent' (RFQ Sent).
+  3. Aprobacion opcional. Si la compania exige doble aprobacion por monto, el estado intermedio es
+     'to approve' (To Approve). Sin esa regla se salta.
+  4. Confirmar. Boton Confirm Order (Confirmar pedido). Pasa a state = 'purchase'
+     (Purchase Order) y date_approve queda registrada. Con productos almacenables se crea la
+     recepcion (ver 2.4). Menu: Purchase > Orders > Purchase Orders (Compras > Pedidos > Pedidos
+     de compra).
+  5. Bloqueo. state = 'done' (Locked) cuando el pedido se bloquea; 'cancel' (Cancelled) si se cancela.
+  6. Facturar. Boton Create Bill (Crear factura) en el pedido: genera la factura de proveedor
+     (account.move con move_type in_invoice, etiqueta Vendor Bill) vinculada a las lineas de compra
+     mediante purchase_line_id. El estado de facturacion invoice_status pasa de 'no' (Nothing to
+     Bill) a 'to invoice' (Waiting Bills) y luego a 'invoiced' (Fully Billed).
+
+En los datos del proyecto
+  - 33 compras confirmadas: partner_ref con prefijo I1-OC-, state = 'purchase', cada una con su
+    factura de proveedor publicada (account_move.ref con prefijo I1-FP-).
+  - Las solicitudes de presupuesto adicionales, si se cargan, llevan partner_ref I1-RFQ-NNN y quedan
+    en state = 'draft' (no se confirman).
+
+Reflejo en la base (resumen)
+  RFQ         -> INSERT en purchase_order (state draft) y purchase_order_line.
+  Confirmar   -> UPDATE purchase_order SET state = 'purchase', date_approve = ahora; filas en
+                 stock_picking (recepcion).
+  Facturar    -> INSERT en account_move (in_invoice) y account_move_line con purchase_line_id;
+                 purchase_order.invoice_status se recalcula.
+
+======================================================================================
+2.3 FACTURACION (modulo account con l10n_gt)
+======================================================================================
+Modelos y tablas
+  account.move       -> tabla account_move       toda factura o asiento: tipo (move_type), estado
+                        (state), diario (journal_id), contacto (partner_id), referencia (ref),
+                        fecha de factura (invoice_date), origen (invoice_origin), estado de pago
+                        (payment_state), montos amount_untaxed, amount_tax, amount_total.
+  account.move.line  -> tabla account_move_line  lineas de producto y apuntes contables: producto,
+                        cantidad, precio unitario (price_unit), impuestos (tax_ids), debit, credit
+                        y cuenta (account_id).
+  account.tax        -> tabla account_tax        impuestos (name, amount, amount_type,
+                        type_tax_use, price_include_override).
+  account.journal    -> tabla account_journal    diarios (code, type, default_account_id).
+
+Tipos y estados
+  move_type: 'out_invoice' (Customer Invoice, factura de cliente), 'in_invoice' (Vendor Bill,
+  factura de proveedor), 'out_refund' (Customer Credit Note), 'in_refund' (Vendor Credit Note) y
+  'entry' (Journal Entry, asiento).
+  state: 'draft' (Draft, borrador), 'posted' (Posted, publicada), 'cancel' (Cancelled).
+  payment_state: 'not_paid', 'in_payment', 'paid', 'partial', 'reversed', 'blocked'.
+
+Menus y botones
+  - Facturas de cliente: Accounting > Customers > Invoices (Contabilidad > Clientes > Facturas).
+  - Facturas de proveedor: Accounting > Vendors > Bills (Contabilidad > Proveedores > Facturas).
+  - Confirm (Confirmar): publica la factura (accion action_post): state pasa de 'draft' a 'posted',
+    se asigna el numero correlativo del diario y se generan los apuntes contables.
+  - Reset to Draft (Restablecer a borrador) y Cancel (Cancelar) revierten el estado.
+  - Print > Invoices (Imprimir > Facturas): genera el PDF.
+
+Diario
+  Al publicar, la factura toma el diario segun su tipo: el diario de ventas de codigo INV (type sale,
+  Customer Invoices) para facturas de cliente y el diario de compras de codigo BILL (type purchase,
+  Vendor Bills) para facturas de proveedor. El diario define la secuencia del numero (por ejemplo
+  prefijo INV/ano/ para clientes y BILL/ano/mes/ para proveedores) y la cuenta por defecto.
+
+Tratamiento del IVA incluido (12 %)
+  - El impuesto IVA 12 % es de tipo porcentaje (amount_type 'percent', amount 12) con
+    price_include_override = 'tax_included' (Tax Included): el precio unitario YA contiene el IVA.
+  - Por tanto el total de la linea es cantidad por precio unitario. El sistema desglosa hacia atras:
+    base = total / 1.12 y IVA = total - base; el total del documento no cambia.
+  - En account_move_line la linea de producto guarda el precio con IVA incluido en price_unit y la
+    relacion tax_ids apunta al impuesto; el IVA se materializa en una linea de apunte contable de
+    impuesto (cuenta de IVA por pagar en ventas, IVA credito fiscal en compras), mientras que
+    amount_untaxed, amount_tax y amount_total de account_move guardan base, IVA y total.
+  - Lo mismo ocurre en sale_order_line y purchase_order_line (campos price_subtotal y price_total en
+    la linea; montos de cabecera en sale_order y purchase_order).
+
+Origen de las facturas del proyecto
+  - 17 facturas de cliente nacidas de sus ventas con el asistente de facturacion (Create Invoice >
+    Regular invoice); ref con prefijo I1-FC-; quedan en state = 'posted'.
+  - 33 facturas de proveedor publicadas, una por compra confirmada (ref prefijo I1-FP-).
+
+Generacion del PDF
+  El PDF sale del informe estandar de factura (account.report_invoice) renderizado con QWeb y
+  wkhtmltopdf. El idioma del documento es el del contacto (res_partner.lang): hoy en ingles; con el
+  idioma espanol asignado al cliente o proveedor (ver ops/idioma_pdf.txt) las etiquetas del PDF
+  (Invoice/Factura, Taxes/Impuestos, Total) salen en espanol. El PDF puede adjuntarse a la factura
+  (tabla ir_attachment) al imprimirse o enviarse por correo.
+
+======================================================================================
+2.4 INVENTARIO (modulo stock)
+======================================================================================
+Modelos y tablas
+  product.template   -> tabla product_template   articulo (name, default_code, list_price, type,
+                        is_storable); product.product -> tabla product_product es la variante.
+  stock.picking      -> tabla stock_picking      transferencia (recepcion o entrega): tipo de
+                        operacion (picking_type_id), origen (origin), estado (state), enlace a la
+                        compra (purchase_id) o venta (sale_id), movimientos (move_ids).
+  stock.move         -> tabla stock_move (fuera del esquema)  cada linea de la transferencia.
+  stock.quant        -> tabla stock_quant (fuera del esquema)  existencias por producto y ubicacion.
+  stock.warehouse    -> tabla stock_warehouse    almacenes.
+
+Cuanto toca al proyecto
+  - Los 20 materiales (default_code I1-MAT-) y 40 productos vendibles (I1-PV-) son articulos
+    almacenables (is_storable verdadero).
+  - Menu: Inventory > Operations > Transfers (Inventario > Operaciones > Transferencias),
+    Inventory > Products > Products (Inventario > Productos > Productos).
+  - Estados de stock_picking.state: 'draft' (Draft), 'waiting' (Waiting Another Operation),
+    'confirmed' (Waiting), 'assigned' (Ready), 'done' (Done), 'cancel' (Cancelled).
+  - Al confirmar una compra se crea una recepcion; al confirmar una venta, una entrega. Boton
+    Validate (Validar) en la transferencia: pasa a 'done' y actualiza stock_quant.
+  - Los guiones de carga confirman ventas y compras y publican facturas, pero no validan las
+    transferencias; su estado real debe consultarse en la base antes de afirmar algo en el manual.
+
+======================================================================================
+2.5 EMPLEADOS (modulo hr)
+======================================================================================
+Modelos y tablas
+  hr.employee    -> tabla hr_employee    empleado: nombre (name), cargo (job_id), departamento
+                    (department_id), identificacion (identification_id), correo y telefono de trabajo.
+  hr.job         -> tabla hr_job         cargos (name, department_id).
+  hr.department  -> tabla hr_department  departamentos (name).
+
+Cuanto toca al proyecto
+  - Menu: Employees > Employees (Empleados > Empleados); configuracion en Employees >
+    Configuration > Job Positions y Departments (Empleados > Configuracion > Puestos de trabajo y
+    Departamentos).
+  - Boton New (Nuevo) crea el empleado; el boton Archive (Archivar) lo desactiva sin borrarlo
+    (active falso).
+  - Datos del Integrante 1: 12 empleados (identification_id con prefijo I1-E-), 2 cargos y
+    2 departamentos. Cada empleado referencia por clave foranea su cargo (job_id) y su departamento
+    (department_id).
+  - Nomina, asistencia y documentos de empleados no se tratan aqui.
