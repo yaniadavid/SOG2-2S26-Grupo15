@@ -1,0 +1,81 @@
+PRUEBA DE RESTAURACION SIN TOCAR PRODUCCION (ejecutada el 2026-10-22 con los pasos de este archivo)
+Proyecto: soyg2-practica1-g15 | Origen: quetzalmart-postgres | Base: quetzalmart_db
+Resultado verificado: el clon tuvo IP privada y sus conteos coincidieron con produccion; el clon se elimino.
+Nota: la version de gcloud usada no ofrecio --network en 'clone'; el clon heredo la red privada del origen.
+Cada comando que crea o borra recursos requiere aprobacion del usuario.
+
+Variables (sin secretos):
+  export PROYECTO=soyg2-practica1-g15
+  export ORIGEN=quetzalmart-postgres
+  export CLON=quetzalmart-postgres-tmp-restauracion-$(date +%Y%m%d)
+  export ZONA=us-central1-a
+  export VM=quetzalmart-odoo
+
+PASO 0 - Comprobaciones previas (solo lectura)
+  # Origen RUNNABLE y red privada usada (anotar el valor de privateNetwork)
+  gcloud sql instances describe $ORIGEN --project=$PROYECTO \
+    --format="value(state,settings.ipConfiguration.privateNetwork,settings.ipConfiguration.ipv4Enabled)"
+  # Instancias existentes (cuota por proyecto, no debe existir ya un clon temporal)
+  gcloud sql instances list --project=$PROYECTO
+  # Respaldos disponibles
+  gcloud sql backups list --instance=$ORIGEN --project=$PROYECTO
+  # Rango de acceso a servicios privados con espacio libre
+  gcloud compute addresses list --project=$PROYECTO --global --filter="purpose=VPC_PEERING"
+  # Confirmar flags del clon en la version instalada de gcloud
+  gcloud sql instances clone --help | grep -E "network|allocated-ip-range|point-in-time"
+
+PASO 1 - Clonar (el clon es una instancia nueva e independiente; el origen no se modifica)
+  # Opcion A: estado actual
+  gcloud sql instances clone $ORIGEN $CLON --project=$PROYECTO \
+    --network=projects/$PROYECTO/global/networks/<RED_PRIVADA_DEL_PASO_0>
+  # Opcion B: punto en el tiempo (UTC, dentro de la ventana de retencion)
+  #   gcloud sql instances clone $ORIGEN $CLON --project=$PROYECTO --point-in-time=<AAAA-MM-DDTHH:MM:SSZ> \
+  #     --network=projects/$PROYECTO/global/networks/<RED_PRIVADA_DEL_PASO_0>
+  # Si la version de gcloud no acepta --network, el clon hereda la red privada del origen; confirmar con el PASO 2.
+
+PASO 2 - Esperar y obtener la IP privada del clon
+  gcloud sql instances describe $CLON --project=$PROYECTO --format="value(state)"          # repetir hasta RUNNABLE
+  gcloud sql instances describe $CLON --project=$PROYECTO \
+    --format="value(ipAddresses[0].ipAddress,ipAddresses[0].type)"                        # type debe ser PRIVATE
+  # Si aparece tipo PRIMARY (publica) en lugar de PRIVATE: eliminar el clon (PASO 5) y reintentar con --network.
+
+PASO 3 - Verificar filas desde la VM por IP privada (usuarios y contrasenas del clon son los del origen)
+  gcloud compute ssh $VM --zone=$ZONA --project=$PROYECTO --tunnel-through-iap
+  # Dentro de la VM, sin escribir la contrasena en archivos ni en historial:
+  export PGHOST=<IP_PRIVADA_DEL_CLON>  PGUSER=<USUARIO_BD>  PGDATABASE=quetzalmart_db
+  read -rs PGPASSWORD; export PGPASSWORD
+  psql -c "SELECT count(*) AS partners FROM res_partner"
+  psql -c "SELECT count(*) AS facturas_publicadas FROM account_move WHERE state='posted' AND move_type IN ('out_invoice','in_invoice')"
+  psql -c "SELECT count(*) AS productos FROM product_template"
+  psql -c "SELECT max(create_date) AS ultimo_registro FROM account_move"
+  # Repetir los mismos conteos contra el origen (PGHOST de produccion) y comparar. Deben coincidir
+  # con tolerancia de lo escrito entre el instante del clon y la consulta.
+  unset PGPASSWORD PGHOST
+  exit
+
+PASO 4 - Regla de seguridad
+  Odoo NUNCA se apunta al clon (no tocar /etc/odoo/odoo.conf). Solo consultas de lectura con psql.
+
+PASO 5 - Eliminar el clon y confirmar
+  gcloud sql instances delete $CLON --project=$PROYECTO
+  gcloud sql instances list --project=$PROYECTO --format="value(name)"
+  # La lista NO debe contener quetzalmart-postgres-tmp-restauracion-*. Si aun aparece, esperar y repetir.
+  # El origen debe seguir en RUNNABLE:
+  gcloud sql instances describe $ORIGEN --project=$PROYECTO --format="value(state)"
+  # Nota: el nombre de una instancia eliminada no se puede reutilizar durante aproximadamente una semana;
+  # por eso el nombre lleva fecha.
+
+COSTO ESTIMADO (confirmar en la calculadora de precios; valores aproximados)
+  db-f1-micro: orden de 0.01 a 0.02 USD por hora; almacenamiento SSD aprox 0.17 USD por GB-mes.
+  Clon vivo 2 horas con 10 GB: menos de 0.10 USD en total. Vivo 24 h: menos de 0.50 USD.
+  Si el clon se olvida: ~10 a 15 USD por mes, a descontar del credito que vence el 2026-11-26.
+
+RIESGOS
+  1. Olvidar borrarlo: cobra 24/7 y consume una IP del rango privado. Mitigacion: ejecutar el PASO 5 en la
+     misma sesion y dejar la hora limite escrita; revisar 'gcloud sql instances list' al cerrar el dia.
+  2. Red y rango: el clon necesita la misma red privada (acceso a servicios privados). Si el rango asignado
+     esta agotado o el clon sale con IP publica, falla o expone la instancia. Verificar tipo PRIVATE (PASO 2).
+  3. Cuota: limite de instancias Cloud SQL por proyecto y de capacidad del peering; revisar en
+     IAM y administracion > Cuotas antes de clonar.
+  4. El clon trae los mismos usuarios y contrasenas que produccion: tratarlo como produccion mientras exista.
+  5. El clon no incluye los parametros de red autorizados externos; no debe necesitarlos.
