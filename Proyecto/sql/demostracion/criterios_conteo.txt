@@ -1,0 +1,46 @@
+CRITERIOS DE CONTEO DEL INTEGRANTE 1 (base quetzalmart_db, Odoo 18)
+Todas las cifras se obtienen con demo_final.sql (bloque TOTALES). Los datos propios llevan el prefijo I1-
+porque la base la comparten los otros integrantes (crm, website, dms y sus empleados).
+
+CIFRAS VIGENTES
+- Ventas confirmadas: 50
+  sale_order con state = 'sale' y client_order_ref LIKE 'I1-V-%'.
+  - Por facturar (33): las anteriores con invoice_status = 'to invoice'.
+  - Facturadas (17): las anteriores con invoice_status = 'invoiced'.
+- Cotizaciones de venta: 7
+  sale_order con state IN ('draft','sent') y client_order_ref LIKE 'I1-Q-%'.
+- Empleados: 12
+  hr_employee con active = true e identification_id LIKE 'I1-E-%'.
+- Cargos: 2
+  hr_job activos cuyo nombre es exactamente 'Cajero de Sucursal' o 'Analista de Compras'.
+- Departamentos: 2
+  hr_department activos cuyo nombre es exactamente 'Operaciones de Tienda' o 'Administracion y Compras'.
+  (el nombre es jsonb traducible: se lee la clave en_US o el valor simple.)
+- Compras confirmadas: 33
+  purchase_order con state IN ('purchase','done') y partner_ref LIKE 'I1-OC-%'.
+- Materiales: 20
+  product_template con default_code LIKE 'I1-MAT-%'. Los productos vendibles propios son I1-PV-%.
+- Facturas de proveedor publicadas: 33
+  account_move con move_type = 'in_invoice', state = 'posted' y ref LIKE 'I1-FP-%'.
+- Facturas de cliente publicadas: 17
+  account_move con move_type = 'out_invoice', state = 'posted' y ref LIKE 'I1-FC-%'.
+- Documentos de respaldo: 5
+  ir_attachment con name LIKE 'I1-Respaldo-%'.
+
+CIFRAS APARTE (decision del usuario; NO estan sumadas en las cifras de arriba)
+- Posibles RFQ de compra (solicitudes de cotizacion a proveedor):
+  SELECT count(*) FROM purchase_order po
+  WHERE po.state IN ('draft','sent') AND po.partner_ref LIKE 'I1-%';
+  Si el usuario decide sumarlas a las cotizaciones, cotizaciones totales = cotizaciones de venta (7) + este conteo.
+  Las compras confirmadas (33) no incluyen RFQ porque exigen state purchase/done.
+- Total global de materiales de la base (incluye los de otros integrantes):
+  SELECT count(*) FROM product_template pt WHERE pt.active AND pt.purchase_ok AND NOT pt.sale_ok;
+  Es la cifra que compara 01_conteos_requisitos.sql contra el minimo de 60; los 20 I1-MAT- son su porcion.
+- Total global de la base por requisito (ventas, cotizaciones, empleados, etc.) sin filtro de prefijo:
+  bloque 1 de demo_final.sql y 01_conteos_requisitos.sql.
+
+NOTAS
+- LIKE usa el guion como caracter literal; el comodin es solo el signo de porcentaje.
+- Si un prefijo cambia, ajustar el literal en demo_final.sql y en este documento a la vez.
+- Valores "esperado" del bloque TOTALES: son las cifras verificadas anteriormente; la columna ok = false
+  indica que la base cambio respecto a esa verificacion.
