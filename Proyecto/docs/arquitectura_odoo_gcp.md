@@ -26,6 +26,18 @@ El 2026-10-14 `gcloud` mostró facturación deshabilitada y ningún recurso. Una
 
 El estado y los pasos pendientes están en [despliegue_odoo_gcp.md](despliegue_odoo_gcp.md).
 
+Portal web y marketing (verificado el 2026-10-22 con una compra de prueba completa):
+
+| Elemento | Estado verificado |
+|---|---|
+| Módulos | website, website_sale, crm, mass_mailing, base_automation y payment_demo instalados |
+| Tienda | 40 productos publicados en 7 categorías con imagen, precios con IVA incluido, envío estándar de 25 GTQ y pago con el proveedor Demo |
+| Inventario | 100 unidades iniciales por producto en WH/Stock; la validación de la entrega descuenta existencias (prueba: 100 a 99) |
+| Facturación | La confirmación de una orden web genera la factura publicada y su PDF en la carpeta del exportador |
+| CRM | Cada registro web crea una oportunidad en el equipo Website mediante una automatización |
+| Correo | Pedido, factura y campaña promocional salen del remitente institucional y la campaña llega después de la factura. El servidor SMTP actual es temporal y solo captura mensajes; falta el remitente real del Integrante 2 |
+| Google Analytics | Eventos nativos view_item, add_to_cart y purchase; se añadió una vista heredada para begin_checkout. Pendiente el Measurement ID del Integrante 2 para activarlo y comprobarlo en navegador |
+
 ## 2. Alcance
 
 Requisitos del enunciado que cubre esta infraestructura:
