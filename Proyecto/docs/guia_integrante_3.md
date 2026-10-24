@@ -14,6 +14,8 @@ Acuerda con el **Integrante 2** que el portal use el catálogo de la misma insta
 
 ### 2. Preparar UiPath y los archivos de prueba
 
+Para construir el robot, sigue la [guía paso a paso de UiPath](robot_uipath_paso_a_paso.md). Esta sección resume las tareas y el criterio de término.
+
 Instala UiPath Studio en el equipo donde ejecutarás el robot, crea un proyecto Windows y agrega las actividades de Excel y de solicitudes autenticadas que requiera la conexión elegida. Usa las [actividades Workbook](https://docs.uipath.com/activities/other/latest/productivity/workbook-activities) para leer Excel sin depender de automatización visual de la ventana de Microsoft Excel cuando sea posible.
 
 Ya existe un [primer libro de prueba](../datos_prueba/rpa/README.md) con `clientes` en quinta posición, `productos` en sexta, filas válidas y errores intencionales. Úsalo para desarrollar la lectura y validación; todavía faltan libros adicionales con `productos` en quinta posición, hojas objetivo en otra posición y ningún objetivo.

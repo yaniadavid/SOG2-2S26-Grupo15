@@ -30,6 +30,14 @@ carga_resumen*.json
 .adk/
 .claude/
 
+# Cachés y ajustes locales que genera UiPath Studio
+Proyecto/uipath/**/.local/
+Proyecto/uipath/**/.settings/
+Proyecto/uipath/**/.templates/
+Proyecto/uipath/**/.entities/
+Proyecto/uipath/**/.objects/
+Proyecto/uipath/**/.tmh/
+
 # Scripts de trabajo local del proyecto (no se publican)
 Proyecto/scripts/local/
 Proyecto/scripts/carga_datos_odoo.py
