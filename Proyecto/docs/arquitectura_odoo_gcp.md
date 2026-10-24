@@ -47,7 +47,7 @@ Requisitos del enunciado que cubre esta infraestructura:
 - Módulos de Ventas, Compras, Empleados y Facturas con datos cargados, visibles en la interfaz web y por consulta a la base de datos.
 - Facturas en PDF disponibles en una carpeta (mínimo 50 más las generadas en la calificación).
 
-Fuera de alcance técnico de este documento: portal web y CRM, Google Analytics, gestión documental y RPA con UiPath. Sus responsables e interfaces con Odoo se describen en [el plan de trabajo](plan_de_trabajo.md).
+Fuera de alcance técnico de este documento: la configuración de cuentas de Google Analytics, la gestión documental y el RPA con UiPath. El portal web y el CRM se describen en la sección 6.1. Sus responsables e interfaces con Odoo se describen en [el plan de trabajo](plan_de_trabajo.md).
 
 ## 3. Arquitectura
 
@@ -90,6 +90,8 @@ flowchart LR
 | Nginx | Termina TLS y reenvía a Odoo | Únicos puertos públicos: 80 y 443 |
 | Cloud SQL para PostgreSQL | Base de datos del ERP | Solo IP privada, respaldos automáticos |
 | Secret Manager | Guarda contraseñas de Odoo y PostgreSQL | Nada de secretos en scripts ni en el repositorio; Odoo usa además `/etc/odoo/odoo.conf` con permisos `640` |
+| Portal web y CRM | Tienda en línea, carrito, pago, envío, oportunidades de CRM y campañas de correo | Módulos `website`, `website_sale`, `crm`, `mass_mailing`, `base_automation` y `payment_demo` dentro de Odoo. La factura se crea sola al confirmar la orden web. Los scripts de configuración están en `Proyecto/scripts/portal_integrante1/` |
+| Salida de correo | Envía pedido, factura y campaña desde el remitente institucional | Servidor SMTP temporal que solo captura mensajes en localhost; se sustituye por el remitente real del Integrante 2 con `configurar_smtp.py` |
 | Firewall de la VPC | Controla el tráfico entrante | Ver sección 5 |
 | Exportador de PDF | Genera el PDF de cada factura publicada, de cliente o de proveedor | Servicio `systemd` y temporizador cada 60 segundos, con un usuario de sistema sin privilegios. Se autentica en Odoo por localhost con el usuario interno `exportador_pdf`, que solo tiene lectura contable. Escribe en una carpeta local de la VM; la carpeta no se publica por Nginx |
 | Rol SQL de solo lectura | Consultas de la demostración | Rol `sog2_lectura` de PostgreSQL con `SELECT` sobre una lista blanca de tablas |
@@ -130,6 +132,41 @@ sequenceDiagram
     O-->>N: HTML renderizado
     N-->>U: Respuesta HTTPS
 ```
+
+## 6.1 Flujo del portal web, CRM y marketing
+
+Recorrido verificado de una compra web de prueba, desde el registro del cliente hasta la campaña de correo.
+
+```mermaid
+flowchart TD
+    cliente["Cliente en el navegador"]
+    reg["Registro web"]
+    tienda["Tienda /shop<br/>40 productos con IVA incluido"]
+    carrito["Carrito, direccion de facturacion y entrega"]
+    envio["Metodo de envio estandar 25 GTQ"]
+    pago["Pago con proveedor Demo"]
+    orden["Orden de venta confirmada"]
+    stock["Entrega WH/OUT<br/>descuenta existencias al validarse"]
+    fact["Factura publicada<br/>creacion automatica"]
+    pdf["PDF de la factura<br/>exportador cada 60 s"]
+    crm["Oportunidad en CRM<br/>equipo Website"]
+    recibo["Correo de pedido y de factura<br/>remitente institucional"]
+    camp["Correo de campana<br/>asunto distinto, llega despues"]
+    smtp["Servidor SMTP saliente"]
+    ga["Google Analytics 4<br/>view_item, add_to_cart, begin_checkout, purchase"]
+
+    cliente --> reg --> crm
+    cliente --> tienda --> carrito --> envio --> pago --> orden
+    orden --> stock
+    orden --> fact --> pdf
+    orden --> recibo --> smtp
+    orden -->|"automatizacion al confirmar"| camp --> smtp
+    tienda -.-> ga
+    carrito -.-> ga
+    pago -.-> ga
+```
+
+El SMTP actual es un servidor temporal de captura; cuando el Integrante 2 aporte un remitente real se sustituye sin cambiar el flujo. Los eventos de Google Analytics se activan al configurar el Measurement ID.
 
 ## 7. Seguridad
 
